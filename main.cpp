@@ -96,8 +96,8 @@ int main(int ac, char **av)
 				if (client[i].revents & POLLIN)
 				{
 					--poll_ret;
-					int recv_size = 0;
-					if ((recv_size = recv(client[i].fd, buf,sizeof(buf), 0)) < 0)
+					int recv_size = recv(client[i].fd, buf,sizeof(buf), 0);
+					if (recv_size < 0)
 					{
 						cerr << "recv error" << endl;
 						return 1;
@@ -114,6 +114,8 @@ int main(int ac, char **av)
 						buf[recv_size] = 0;
 						cout << "from fd:" << client[i].fd << endl;
 						cout << "receive:" << buf << endl;
+						send(client[i].fd, "echo:", 5, 0);
+						send(client[i].fd, buf, recv_size, 0);
 					}
 				}
 			}
