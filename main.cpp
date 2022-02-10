@@ -32,9 +32,9 @@ int main(int ac, char **av)
 	int port = atoi(av[ac - 2]);
 	string password = av[ac - 1];
 
+	map<string, set<string>> channel;
 	map<string, int> client_map;
 	struct pollfd client[CLIENT_MAX];
-	map<string, set<string>> channel;
 
 	struct sockaddr_in server_addr, client_addr;
 	socklen_t clientaddr_len = sizeof(client_addr);
@@ -67,13 +67,13 @@ int main(int ac, char **av)
 	cout << "Server on" << endl;
 	client[0].fd = server_socket;
 	client[0].events = POLLIN;
-	int count = 1;
+	int max_client_num = 1, idx = 1;
 	for (int i = 1; i < CLIENT_MAX; ++i)
 		client[i].fd = -1;
 
 	while (1)
 	{
-		int poll_ret = poll(client, count, -1);
+		int poll_ret = poll(client, max_client_num, -1);
 		if (client[0].revents & POLLIN)
 		{
 			int client_socket;
@@ -85,13 +85,22 @@ int main(int ac, char **av)
 			}
 			cout << "ip  : " << inet_ntoa(client_addr.sin_addr) << endl;
 			cout << "port: " << ntohs(client_addr.sin_port) << endl;
-			cout << "accepted on fd " << client_socket << endl;
-			client[count].fd = client_socket;
-			client[count++].events = POLLIN;
+			cout << "accepted on fd " << client_socket << endl << endl;
+			for (idx = 1; client[idx].fd != -1 && idx < max_client_num; ++idx) ;
+			if (idx != max_client_num)
+			{
+				client[idx].fd = client_socket;
+				client[idx].events = POLLIN;
+			}
+			else
+			{
+				client[max_client_num].fd = client_socket;
+				client[max_client_num++].events = POLLIN;
+			}
 		}
 		else
 		{
-			for (int i = 1; i < count && poll_ret; ++i)
+			for (int i = 1; i < max_client_num && poll_ret; ++i)
 			{
 				if (client[i].revents & POLLIN)
 				{
@@ -107,7 +116,6 @@ int main(int ac, char **av)
 						close(client[i].fd);
 						client[i].events = 0;
 						client[i].fd = -1;
-						--count;
 					}
 					else
 					{
