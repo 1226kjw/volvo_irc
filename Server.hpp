@@ -20,9 +20,9 @@ class Server
 public:
 	const int port;
 	const string passwd;
-	map<string, set<Client*> > channel;
-	map<string, Client> client;
-	map<int, Client> unregistered;
+	map<string, set<int> > channel;
+	map<string, int> client_map;
+	map<int, Client> client;
 	struct pollfd client_fd[CLIENT_MAX];
 
 	struct sockaddr_in6 server_addr, client_addr;
@@ -84,7 +84,7 @@ public:
 				cout << "ip  : " << ip << endl;
 				cout << "port: " << ntohs(client_addr.sin6_port) << endl;
 				cout << "accepted on fd " << client_socket << endl;
-				for (idx = 1; client_fd[idx].fd != -1 && idx < max_index; ++idx) ;
+				for (idx = 1; client_fd[idx].fd != -1 && idx < max_index; ++idx) ; /////////////////////////////////////////
 				cout << "idx : " << idx << endl << endl;
 				if (idx != max_index)
 				{
@@ -96,7 +96,7 @@ public:
 					client_fd[max_index].fd = client_socket;
 					client_fd[max_index++].events = POLLIN;
 				}
-				unregistered[idx] = Client(idx);
+				client[idx] = Client(idx, client_socket);
 			}
 			else
 			{
@@ -119,22 +119,43 @@ public:
 						}
 						else
 						{
-							if (unregistered.find(i) != unregistered.end())
-							{
-								cout << "unregistered" << endl;
-							}
-							else
-							{
-								buf[recv_size] = 0;
-								cout << "from fd:" << client_fd[i].fd << endl;
-								cout << "receive:" << buf << endl;
-								send(client_fd[i].fd, "echo:", 5, 0);
-								send(client_fd[i].fd, buf, recv_size, 0);
-							}
+							buf[recv_size] = 0;
+							client[i].feed(buf);
+							if (client[i].msg.back() == '\n')
+								cmd(i);
 						}
 					}
 				}
 			}
+		}
+	}
+	void cmd(int i)
+	{
+		size_t pos = client[i].msg.find(' ');
+		string command = client[i].msg.substr(0, pos);
+		if (pos != string::npos)
+			while (client[i].msg[pos] == ' ')
+				++pos;
+		string arg = pos == string::npos ? "" : client[i].msg.substr(pos, string::npos);
+
+		client[i].msg = "";
+
+		if (!client[i].is_registered)
+		{
+			if (command == "PASS")
+				client[i].authenticate(passwd, arg);
+			else if (command == "NICK")
+				client[i].nick(arg);
+			else if (command == "USER")
+				client[i].user(arg);
+			else
+			{
+				send(client[i].fd, "register first.\n", 17, 0);
+			}
+		}
+		else
+		{
+
 		}
 	}
 };
