@@ -37,11 +37,6 @@ public:
 	}
 	void authenticate(string passwd, vector<string> arg)
 	{
-		if (is_authenticated)
-		{
-			send(fd, "already authenticated\n", 23, 0);
-			return ;
-		}
 		if (arg.size() == 1 && passwd == arg[0])
 		{
 			send(fd, "authenticated\n", 15, 0);

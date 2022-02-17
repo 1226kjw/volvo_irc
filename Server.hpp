@@ -141,6 +141,7 @@ public:
 						{
 							close(client[i].fd);
 							Client::taken.erase(client[i].nickname);
+							client_map.erase(client[i].nickname);
 							for (map<string, set<int> >::iterator mitr = channel.begin(); mitr != channel.end(); ++mitr)
 							{
 								mitr->second.erase(i);
@@ -163,6 +164,7 @@ public:
 
 	void cmd(int i)
 	{
+		cout << client[i].msg;
 		if (client[i].msg.back() == '\n')
 			client[i].msg.pop_back();
 		vector<string> tok = split(client[i].msg);
@@ -173,7 +175,6 @@ public:
 		string command = tok[0];
 		vector<string> arg(tok.begin() + 1, tok.end());
 
-		client[i].msg = "";
 
 		if (!client[i].is_registered)
 		{
@@ -184,12 +185,15 @@ public:
 				else
 					send(client[i].fd, "authenticate first\n", 20, 0);
 			}
+			else if (command == "PASS")
+				send(client[i].fd, "already authenticated\n", 23, 0);
 			else if (command == "NICK")
 				client[i].nick(client_map, arg);
 			else if (command == "USER")
 				client[i].user(arg);
 			else
 				send(client[i].fd, "register first\n", 16, 0);
+			client[i].msg = "";
 			return ;
 		}
 		
@@ -199,8 +203,13 @@ public:
 		}
 		else if (command == "PRIVMSG")
 		{
-
+			for (vector<string>::iterator itr = arg.begin(); itr != arg.end(); ++itr)
+			{
+				if (client_map.find(*itr) != client_map.end())
+					send(client[client_map[*itr]].fd, client[i].msg.c_str(), sizeof(client[i].msg.size()), 0);
+			}
 		}
+		client[i].msg = "";
 	}
 };
 
