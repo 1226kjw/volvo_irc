@@ -1,3 +1,5 @@
 *.o
 *.d
+.gitignore
 ft_irc
+.vscode/

@@ -4,6 +4,7 @@
 class Client
 {
 public:
+	static set<string> taken;
 	bool is_authenticated;
 	bool is_registered;
 	string nickname;
@@ -37,28 +38,44 @@ public:
 	{
 		if (is_authenticated)
 		{
-			cout << "already authenticated" << endl;
+			send(fd, "already authenticated\n", 23, 0);
 			return ;
 		}
 		while (arg.back() == '\n')
 			arg.pop_back();
 		if (passwd == arg)
 		{
-			cout << "authenticated." << endl;
+			send(fd, "authenticated\n", 15, 0);
 			is_authenticated = true;
 		}
 		else
 		{
-			cout << "wrong pw." << endl;
+			send(fd, "wrong pw\n", 10, 0);
 		}
 	}
-	void nick(string arg)
+	void nick(map<string, int> &client_map, string arg)
 	{
-
+		if (client_map.find(arg) != client_map.end())
+		{
+			send(fd, "already taken.\n", 16, 0);
+			return ;
+		}
+		nickname = arg;
+		client_map[arg] = idx;
+		if (is_authenticated && nickname != "" && username != "")
+		{
+			is_registered = true;
+			send(fd, "registered\n", 12, 0);
+		}
 	}
 	void user(string arg)
 	{
-		
+		username = arg;
+		if (is_authenticated && nickname != "" && username != "")
+		{
+			is_registered = true;
+			send(fd, "registered\n", 12, 0);
+		}
 	}
 };
 

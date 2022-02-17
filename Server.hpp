@@ -142,18 +142,27 @@ public:
 
 		if (!client[i].is_registered)
 		{
-			if (command == "PASS")
-				client[i].authenticate(passwd, arg);
+			if (!client[i].is_authenticated)
+			{
+				if (command == "PASS")
+					client[i].authenticate(passwd, arg);
+				else
+					send(client[i].fd, "authenticate first\n", 20, 0);
+			}
 			else if (command == "NICK")
-				client[i].nick(arg);
+				client[i].nick(client_map, arg);
 			else if (command == "USER")
 				client[i].user(arg);
 			else
-			{
-				send(client[i].fd, "register first.\n", 17, 0);
-			}
+				send(client[i].fd, "register first\n", 16, 0);
+			return ;
 		}
-		else
+		
+		if (command == "JOIN")
+		{
+			
+		}
+		else if (command == "PRIVMSG")
 		{
 
 		}
