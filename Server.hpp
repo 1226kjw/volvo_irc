@@ -44,8 +44,8 @@ class Server
 public:
 	const int port;
 	const string passwd;
-	map<string, set<int> > channel;
 	map<string, int> client_map;
+	map<string, Channel> channel;
 	map<int, Client> client;
 	struct pollfd client_fd[CLIENT_MAX];
 
@@ -128,34 +128,31 @@ public:
 			{
 				for (int i = 1; i < max_index && poll_ret; ++i)
 				{
-					if (client_fd[i].revents & POLLIN)
+					if (!(client_fd[i].revents & POLLIN))
+						continue;
+					--poll_ret;
+					int recv_size = recv(client_fd[i].fd, buf,sizeof(buf), 0);
+					if (recv_size < 0)
 					{
-						--poll_ret;
-						int recv_size = recv(client_fd[i].fd, buf,sizeof(buf), 0);
-						if (recv_size < 0)
-						{
-							cerr << "recv error" << endl;
-							return 1;
-						}
-						else if (recv_size == 0)
-						{
-							close(client[i].fd);
-							Client::taken.erase(client[i].nickname);
-							client_map.erase(client[i].nickname);
-							for (map<string, set<int> >::iterator mitr = channel.begin(); mitr != channel.end(); ++mitr)
-							{
-								mitr->second.erase(i);
-							}
-							client_fd[i].events = 0;
-							client_fd[i].fd = -1;
-						}
-						else
-						{
-							buf[recv_size] = 0;
-							client[i].feed(buf);
-							if (client[i].msg.back() == '\n')
-								cmd(i);
-						}
+						cerr << "recv error" << endl;
+						return 1;
+					}
+					else if (recv_size == 0)
+					{
+						close(client[i].fd);
+						Client::taken.erase(client[i].nickname);
+						client_map.erase(client[i].nickname);
+						for (map<string, Channel>::iterator mitr = channel.begin(); mitr != channel.end(); ++mitr)
+							mitr->second.member.erase(i);
+						client_fd[i].events = 0;
+						client_fd[i].fd = -1;
+					}
+					else
+					{
+						buf[recv_size] = 0;
+						client[i].feed(buf);
+						if (client[i].msg.back() == '\n')
+							cmd(i);
 					}
 				}
 			}
@@ -164,10 +161,10 @@ public:
 
 	void cmd(int i)
 	{
-		cout << client[i].msg;
-		if (client[i].msg.back() == '\n')
-			client[i].msg.pop_back();
+		cout << "from " << i << ':' << client[i].msg;
 		vector<string> tok = split(client[i].msg);
+		if (tok.back().back() == '\n')
+			tok.back().pop_back();
 		
 		if (tok.size() == 0)
 			return ;
@@ -199,16 +196,26 @@ public:
 		
 		if (command == "JOIN")
 		{
-			
+			if (arg.size() == 1 && arg[0] == "0")
+			{
+				for (map<string, Channel>::iterator itr = channel.begin(); itr != channel.end(); ++itr)
+					itr->second.member.erase(i);
+			}
+			else
+				for (vector<string>::iterator itr = arg.begin(); itr != arg.end(); ++itr)
+				{
+					if (channel.find(*itr) == channel.end())
+						channel[*itr] = Channel();
+					channel[*itr].member.insert(i);
+				}
 		}
 		else if (command == "PRIVMSG")
 		{
-			for (vector<string>::iterator itr = arg.begin(); itr != arg.end(); ++itr)
-			{
-				if (client_map.find(*itr) != client_map.end())
-					send(client[client_map[*itr]].fd, client[i].msg.c_str(), sizeof(client[i].msg.size()), 0);
-			}
+			if (arg.size() > 1 && client_map.find(arg[0]) != client_map.end())
+				send(client[client_map[arg[0]]].fd, client[i].msg.c_str(), client[i].msg.size(), 0);
 		}
+
+
 		client[i].msg = "";
 	}
 };

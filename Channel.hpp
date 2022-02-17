@@ -7,7 +7,7 @@ public:
 	string name;
 	string manager;
 	string topic;
-	set<string> member;
+	set<int> member;
 };
 
 #endif
