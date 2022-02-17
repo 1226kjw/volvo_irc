@@ -5,6 +5,7 @@ class Client
 {
 public:
 	static set<string> taken;
+	set<string> joined_channel;
 	bool is_authenticated;
 	bool is_registered;
 	string nickname;
@@ -34,16 +35,14 @@ public:
 	{
 		msg += buf;
 	}
-	void authenticate(string passwd, string arg)
+	void authenticate(string passwd, vector<string> arg)
 	{
 		if (is_authenticated)
 		{
 			send(fd, "already authenticated\n", 23, 0);
 			return ;
 		}
-		while (arg.back() == '\n')
-			arg.pop_back();
-		if (passwd == arg)
+		if (arg.size() == 1 && passwd == arg[0])
 		{
 			send(fd, "authenticated\n", 15, 0);
 			is_authenticated = true;
@@ -53,8 +52,13 @@ public:
 			send(fd, "wrong pw\n", 10, 0);
 		}
 	}
-	void nick(map<string, int> &client_map, string arg)
+	void nick(map<string, int> &client_map, vector<string> args)
 	{
+		if (args.size() != 1)
+		{
+			send(fd, "invalid num of args\n", 21, 0);
+		}
+		string arg = args[0];
 		if (client_map.find(arg) != client_map.end())
 		{
 			send(fd, "already taken.\n", 16, 0);
@@ -68,9 +72,13 @@ public:
 			send(fd, "registered\n", 12, 0);
 		}
 	}
-	void user(string arg)
+	void user(vector<string> args)
 	{
-		username = arg;
+		if (args.size() != 1)
+		{
+			send(fd, "invalid num of args\n", 21, 0);
+		}
+		username = args[0];
 		if (is_authenticated && nickname != "" && username != "")
 		{
 			is_registered = true;

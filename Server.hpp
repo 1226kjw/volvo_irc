@@ -15,6 +15,30 @@ using std::string;
 using std::map;
 using std::set;
 
+vector<string> split(string str, char d = ' ')
+{
+	vector<string> ret;
+	string istr;
+	for (string::iterator c = str.begin(); c != str.end(); ++c)
+	{
+		if (istr == "" && *c == ':')
+		{
+			ret.push_back(str.substr(c - str.begin(), string::npos));
+			break ;
+		}
+		if (*c != d)
+			istr.push_back(*c);
+		else if (istr != "")
+		{
+			ret.push_back(istr);
+			istr = "";
+		}
+	}
+	if (istr != "")
+		ret.push_back(istr);
+	return ret;
+}
+
 class Server
 {
 public:
@@ -34,6 +58,7 @@ public:
 	int idx;
 
 	Server(int port, string pw): port(port), passwd(pw), clientaddr_len(sizeof(client_addr)) {}
+
 	int setup()
 	{
 		if ((server_socket = socket(AF_INET6, SOCK_STREAM, 0)) < 0)
@@ -63,6 +88,7 @@ public:
 			client_fd[i].fd = -1;
 		return 0;
 	}
+
 	int run()
 	{
 		max_index = 1;
@@ -113,7 +139,12 @@ public:
 						}
 						else if (recv_size == 0)
 						{
-							close(client_fd[i].fd);
+							close(client[i].fd);
+							Client::taken.erase(client[i].nickname);
+							for (map<string, set<int> >::iterator mitr = channel.begin(); mitr != channel.end(); ++mitr)
+							{
+								mitr->second.erase(i);
+							}
 							client_fd[i].events = 0;
 							client_fd[i].fd = -1;
 						}
@@ -129,14 +160,18 @@ public:
 			}
 		}
 	}
+
 	void cmd(int i)
 	{
-		size_t pos = client[i].msg.find(' ');
-		string command = client[i].msg.substr(0, pos);
-		if (pos != string::npos)
-			while (client[i].msg[pos] == ' ')
-				++pos;
-		string arg = pos == string::npos ? "" : client[i].msg.substr(pos, string::npos);
+		if (client[i].msg.back() == '\n')
+			client[i].msg.pop_back();
+		vector<string> tok = split(client[i].msg);
+		
+		if (tok.size() == 0)
+			return ;
+		
+		string command = tok[0];
+		vector<string> arg(tok.begin() + 1, tok.end());
 
 		client[i].msg = "";
 
