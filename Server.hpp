@@ -49,7 +49,7 @@ public:
 	map<int, Client> client;
 	struct pollfd client_fd[CLIENT_MAX];
 
-	struct sockaddr_in6 server_addr, client_addr;
+	struct sockaddr_in server_addr, client_addr;
 	socklen_t clientaddr_len;
 	int server_socket;
 	char buf[BUFFER_SIZE + 1];
@@ -61,7 +61,7 @@ public:
 
 	int setup()
 	{
-		if ((server_socket = socket(AF_INET6, SOCK_STREAM, 0)) < 0)
+		if ((server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		{
 			cerr << "Cannot create a socket" << endl;
 			return 1;
@@ -69,9 +69,9 @@ public:
 		int op = 1;
 		setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &op, sizeof(op));
 		bzero(&server_addr, sizeof(server_addr));
-		server_addr.sin6_family = AF_INET6;
-		server_addr.sin6_addr = in6addr_any;
-		server_addr.sin6_port = htons(port);
+		server_addr.sin_family = AF_INET;
+		server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+		server_addr.sin_port = htons(port);
 		if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
 		{
 			cerr << "Cannot bind name to socket" << endl;
@@ -105,10 +105,8 @@ public:
 					cerr << "accept error" << endl;
 					return 1;
 				}
-				char ip[128];
-				inet_ntop(AF_INET6, &client_addr.sin6_addr, ip, 128);
-				cout << "ip  : " << ip << endl;
-				cout << "port: " << ntohs(client_addr.sin6_port) << endl;
+				cout << "ip  : " << inet_ntoa(client_addr.sin_addr) << endl;
+				cout << "port: " << ntohs(client_addr.sin_port) << endl;
 				cout << "accepted on fd " << client_socket << endl;
 				for (idx = 1; client_fd[idx].fd != -1 && idx < max_index; ++idx) ; /////////////////////////////////////////
 				cout << "idx : " << idx << endl << endl;
