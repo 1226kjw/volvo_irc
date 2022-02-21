@@ -156,6 +156,8 @@ public:
 		}
 	}
 
+	// client[i].fd == client_fd[i].fd
+	// i != client[i].fd
 	void cmd(int i)
 	{
 		cout << "from " << i << ':' << client[i].msg;
@@ -214,6 +216,14 @@ public:
 					channel[channel_name].member.insert(i);
 				}
 		}
+		else if (command == "KICK")
+		{
+			
+		}
+		else if (command == "PART")
+		{
+			
+		}
 		else if (command == "PRIVMSG")
 		{
 			if (arg.size() != 2)
@@ -238,6 +248,14 @@ public:
 				else
 					send(client[i].fd, "user not found\n", 16, 0);
 			}
+		}
+		else if (command == "NOTICE")
+		{
+			
+		}
+		else if (command == "QUIT")
+		{
+			
 		}
 		client[i].msg = "";
 	}
