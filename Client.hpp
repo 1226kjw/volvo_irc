@@ -4,7 +4,6 @@
 class Client
 {
 public:
-	static set<string> taken;
 	set<string> joined_channel;
 	bool is_authenticated;
 	bool is_registered;

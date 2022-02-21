@@ -25,8 +25,6 @@ using std::set;
 
 #include "Server.hpp"
 
-set<string> Client::taken = set<string>();
-
 int main(int ac, char **av)
 {
 	if (ac < 3 || ac > 4)
