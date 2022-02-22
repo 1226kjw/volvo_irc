@@ -71,6 +71,7 @@ public:
 		if (args.size() != 1)
 		{
 			send(fd, "invalid num of args\n", 21, 0);
+			return ;
 		}
 		username = args[0];
 		if (is_authenticated && nickname != "" && username != "")
