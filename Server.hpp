@@ -1,9 +1,19 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
+# include <iostream>
 # include <map>
 # include <set>
+# include <vector>
+# include <queue>
+# include <cstring>
+
+# include <sys/types.h>
+# include <sys/socket.h>
+# include <arpa/inet.h>
+# include <netdb.h>
 # include <poll.h>
+# include <unistd.h>
 
 # include "Client.hpp"
 # include "Channel.hpp"
@@ -11,9 +21,14 @@
 #define CLIENT_MAX 1000
 #define BUFFER_SIZE 1024
 
+using std::cout;
+using std::cerr;
+using std::endl;
 using std::string;
 using std::map;
 using std::set;
+using std::vector;
+using std::priority_queue;
 
 vector<string> split(string str, char d = ' ')
 {
@@ -48,6 +63,7 @@ public:
 	map<string, Channel> channel;
 	map<int, Client> client;
 	struct pollfd client_fd[CLIENT_MAX];
+	priority_queue<int> available_index;
 
 	struct sockaddr_in server_addr, client_addr;
 	socklen_t clientaddr_len;
@@ -58,6 +74,12 @@ public:
 	int idx;
 
 	Server(int port, string pw): port(port), passwd(pw), clientaddr_len(sizeof(client_addr)) {}
+	~Server()
+	{
+		for (int i = 0; i < CLIENT_MAX; ++i)
+			if (client_fd[i].fd != -1)
+				close(client_fd[i].fd);
+	}
 
 	int setup()
 	{
@@ -85,7 +107,10 @@ public:
 		client_fd[0].fd = server_socket;
 		client_fd[0].events = POLLIN;
 		for (int i = 1; i < CLIENT_MAX; ++i)
+		{
 			client_fd[i].fd = -1;
+			available_index.push(-i);
+		}
 		return 0;
 	}
 
@@ -105,10 +130,11 @@ public:
 					cerr << "accept error" << endl;
 					return 1;
 				}
-				cout << "ip  : " << inet_ntoa(client_addr.sin_addr) << endl;
-				cout << "port: " << ntohs(client_addr.sin_port) << endl;
-				cout << "accepted on fd " << client_socket << endl;
-				for (idx = 1; client_fd[idx].fd != -1 && idx < max_index; ++idx) ; /////////////////////////////////////////
+				// cout << "ip  : " << inet_ntoa(client_addr.sin_addr) << endl;
+				// cout << "port: " << ntohs(client_addr.sin_port) << endl;
+				cout << "client accepted on fd " << client_socket << endl;
+				idx = -available_index.top();
+				available_index.pop();
 				cout << "idx : " << idx << endl << endl;
 				if (idx != max_index)
 				{
@@ -138,11 +164,14 @@ public:
 					else if (recv_size == 0)
 					{
 						close(client[i].fd);
+						cout << "byebye " << client[i].nickname << endl;
+						cout << "index " << i << " is available" << endl;
 						client_map.erase(client[i].nickname);
 						for (map<string, Channel>::iterator mitr = channel.begin(); mitr != channel.end(); ++mitr)
 							mitr->second.member.erase(i);
 						client_fd[i].events = 0;
 						client_fd[i].fd = -1;
+						available_index.push(-i);
 					}
 					else
 					{
