@@ -1,6 +1,8 @@
 #ifndef CHANNEL_HPP
 # define CHANNEL_HPP
 
+using std::string;
+
 class Channel
 {
 public:

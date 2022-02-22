@@ -1,5 +1,5 @@
 #ifndef SERVER_HPP
-#define SERVER_HPP
+# define SERVER_HPP
 
 # include <iostream>
 # include <map>
@@ -15,8 +15,8 @@
 # include <poll.h>
 # include <unistd.h>
 
-#include "Client.hpp"
-#include "Channel.hpp"
+# include "Client.hpp"
+# include "Channel.hpp"
 
 #define CLIENT_MAX 1000
 #define BUFFER_SIZE 1024
@@ -39,7 +39,7 @@ vector<string> split(string str, char d = ' ')
 		if (istr == "" && *c == ':')
 		{
 			ret.push_back(str.substr(c - str.begin(), string::npos));
-			break;
+			break ;
 		}
 		if (*c != d)
 			istr.push_back(*c);
@@ -94,7 +94,7 @@ public:
 		server_addr.sin_family = AF_INET;
 		server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 		server_addr.sin_port = htons(port);
-		if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+		if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
 		{
 			cerr << "Cannot bind name to socket" << endl;
 			return 1;
@@ -147,39 +147,37 @@ public:
 					client_fd[max_index++].events = POLLIN;
 				}
 				client[idx] = Client(idx, client_socket);
+				continue ;
 			}
-			else
+			for (int i = 1; i < max_index && poll_ret; ++i)
 			{
-				for (int i = 1; i < max_index && poll_ret; ++i)
+				if (!(client_fd[i].revents & POLLIN))
+					continue;
+				--poll_ret;
+				int recv_size = recv(client_fd[i].fd, buf,sizeof(buf), 0);
+				if (recv_size < 0)
 				{
-					if (!(client_fd[i].revents & POLLIN))
-						continue;
-					--poll_ret;
-					int recv_size = recv(client_fd[i].fd, buf, sizeof(buf), 0);
-					if (recv_size < 0)
-					{
-						cerr << "recv error" << endl;
-						return 1;
-					}
-					else if (recv_size == 0)
-					{
-						close(client[i].fd);
-						cout << "byebye " << client[i].nickname << endl;
-						cout << "index " << i << " is available" << endl;
-						client_map.erase(client[i].nickname);
-						for (map<string, Channel>::iterator mitr = channel.begin(); mitr != channel.end(); ++mitr)
-							mitr->second.member.erase(i);
-						client_fd[i].events = 0;
-						client_fd[i].fd = -1;
-						available_index.push(-i);
-					}
-					else
-					{
-						buf[recv_size] = 0;
-						client[i].feed(buf);
-						if (client[i].msg.back() == '\n')
-							cmd(i);
-					}
+					cerr << "recv error" << endl;
+					return 1;
+				}
+				else if (recv_size == 0)
+				{
+					close(client[i].fd);
+					cout << "byebye " << client[i].nickname << endl;
+					cout << "index " << i << " is available" << endl;
+					client_map.erase(client[i].nickname);
+					for (map<string, Channel>::iterator mitr = channel.begin(); mitr != channel.end(); ++mitr)
+						mitr->second.member.erase(i);
+					client_fd[i].events = 0;
+					client_fd[i].fd = -1;
+					available_index.push(-i);
+				}
+				else
+				{
+					buf[recv_size] = 0;
+					client[i].feed(buf);
+					if (client[i].msg.back() == '\n')
+						cmd(i);
 				}
 			}
 		}
@@ -193,12 +191,13 @@ public:
 		vector<string> tok = split(client[i].msg);
 		if (tok.back().back() == '\n')
 			tok.back().pop_back();
-
+		
 		if (tok.size() == 0)
-			return;
-
+			return ;
+		
 		string command = tok[0];
 		vector<string> arg(tok.begin() + 1, tok.end());
+
 
 		if (!client[i].is_registered)
 		{
@@ -218,9 +217,9 @@ public:
 			else
 				send(client[i].fd, "register first\n", 16, 0);
 			client[i].msg = "";
-			return;
+			return ;
 		}
-
+		
 		if (command == "JOIN")
 		{
 			if (arg.size() == 1 && arg[0] == "0")
@@ -237,7 +236,7 @@ public:
 						continue;
 					}
 
-					string channel_name(itr->begin() + 1, itr->end());
+					string channel_name(itr->begin() + 1,itr->end());
 
 					if (channel.find(channel_name) == channel.end())
 						channel[channel_name] = Channel();
@@ -246,11 +245,13 @@ public:
 		}
 		else if (command == "KICK")
 		{
+			
 		}
 		else if (command == "PART")
 		{
+			
 		}
-		else if (command == "PRIVMSG" || command == "NOTICE")
+		else if (command == "PRIVMSG")
 		{
 			if (arg.size() != 2)
 			{
@@ -275,8 +276,13 @@ public:
 					send(client[i].fd, "user not found\n", 16, 0);
 			}
 		}
+		else if (command == "NOTICE")
+		{
+			
+		}
 		else if (command == "QUIT")
 		{
+			
 		}
 		client[i].msg = "";
 	}

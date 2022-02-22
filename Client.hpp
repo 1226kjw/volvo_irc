@@ -1,6 +1,15 @@
 #ifndef CLIENT_HPP
 # define CLIENT_HPP
 
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::string;
+using std::map;
+using std::set;
+using std::vector;
+using std::priority_queue;
+
 class Client
 {
 public:
