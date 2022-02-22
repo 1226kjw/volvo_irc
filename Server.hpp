@@ -1,19 +1,19 @@
 #ifndef SERVER_HPP
-# define SERVER_HPP
+#define SERVER_HPP
 
-# include <map>
-# include <set>
-# include <poll.h>
+#include <map>
+#include <set>
+#include <poll.h>
 
-# include "Client.hpp"
-# include "Channel.hpp"
+#include "Client.hpp"
+#include "Channel.hpp"
 
 #define CLIENT_MAX 1000
 #define BUFFER_SIZE 1024
 
-using std::string;
 using std::map;
 using std::set;
+using std::string;
 
 vector<string> split(string str, char d = ' ')
 {
@@ -24,7 +24,7 @@ vector<string> split(string str, char d = ' ')
 		if (istr == "" && *c == ':')
 		{
 			ret.push_back(str.substr(c - str.begin(), string::npos));
-			break ;
+			break;
 		}
 		if (*c != d)
 			istr.push_back(*c);
@@ -57,7 +57,7 @@ public:
 	int max_index;
 	int idx;
 
-	Server(int port, string pw): port(port), passwd(pw), clientaddr_len(sizeof(client_addr)) {}
+	Server(int port, string pw) : port(port), passwd(pw), clientaddr_len(sizeof(client_addr)) {}
 
 	int setup()
 	{
@@ -72,7 +72,7 @@ public:
 		server_addr.sin_family = AF_INET;
 		server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 		server_addr.sin_port = htons(port);
-		if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
+		if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
 		{
 			cerr << "Cannot bind name to socket" << endl;
 			return 1;
@@ -108,8 +108,10 @@ public:
 				cout << "ip  : " << inet_ntoa(client_addr.sin_addr) << endl;
 				cout << "port: " << ntohs(client_addr.sin_port) << endl;
 				cout << "accepted on fd " << client_socket << endl;
-				for (idx = 1; client_fd[idx].fd != -1 && idx < max_index; ++idx) ; /////////////////////////////////////////
-				cout << "idx : " << idx << endl << endl;
+				for (idx = 1; client_fd[idx].fd != -1 && idx < max_index; ++idx)
+					; /////////////////////////////////////////
+				cout << "idx : " << idx << endl
+					 << endl;
 				if (idx != max_index)
 				{
 					client_fd[idx].fd = client_socket;
@@ -129,7 +131,7 @@ public:
 					if (!(client_fd[i].revents & POLLIN))
 						continue;
 					--poll_ret;
-					int recv_size = recv(client_fd[i].fd, buf,sizeof(buf), 0);
+					int recv_size = recv(client_fd[i].fd, buf, sizeof(buf), 0);
 					if (recv_size < 0)
 					{
 						cerr << "recv error" << endl;
@@ -164,13 +166,12 @@ public:
 		vector<string> tok = split(client[i].msg);
 		if (tok.back().back() == '\n')
 			tok.back().pop_back();
-		
+
 		if (tok.size() == 0)
-			return ;
-		
+			return;
+
 		string command = tok[0];
 		vector<string> arg(tok.begin() + 1, tok.end());
-
 
 		if (!client[i].is_registered)
 		{
@@ -190,9 +191,9 @@ public:
 			else
 				send(client[i].fd, "register first\n", 16, 0);
 			client[i].msg = "";
-			return ;
+			return;
 		}
-		
+
 		if (command == "JOIN")
 		{
 			if (arg.size() == 1 && arg[0] == "0")
@@ -209,7 +210,7 @@ public:
 						continue;
 					}
 
-					string channel_name(itr->begin() + 1,itr->end());
+					string channel_name(itr->begin() + 1, itr->end());
 
 					if (channel.find(channel_name) == channel.end())
 						channel[channel_name] = Channel();
@@ -218,13 +219,11 @@ public:
 		}
 		else if (command == "KICK")
 		{
-			
 		}
 		else if (command == "PART")
 		{
-			
 		}
-		else if (command == "PRIVMSG")
+		else if (command == "PRIVMSG" || command == "NOTICE")
 		{
 			if (arg.size() != 2)
 			{
@@ -249,13 +248,8 @@ public:
 					send(client[i].fd, "user not found\n", 16, 0);
 			}
 		}
-		else if (command == "NOTICE")
-		{
-			
-		}
 		else if (command == "QUIT")
 		{
-			
 		}
 		client[i].msg = "";
 	}
