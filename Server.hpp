@@ -206,16 +206,16 @@ public:
 				if (command == "PASS")
 					client[i].authenticate(passwd, arg);
 				else
-					send(client[i].fd, "authenticate first\n", 20, 0);
+					client[i].toss("authenticate first\n");
 			}
 			else if (command == "PASS")
-				send(client[i].fd, "already authenticated\n", 23, 0);
+				client[i].toss("already authenticated\n");
 			else if (command == "NICK")
 				client[i].nick(client_map, arg);
 			else if (command == "USER")
 				client[i].user(arg);
 			else
-				send(client[i].fd, "register first\n", 16, 0);
+				client[i].toss("register first\n");
 			client[i].msg = "";
 			return ;
 		}
@@ -224,8 +224,9 @@ public:
 		{
 			if (arg.size() == 1 && arg[0] == "0")
 			{
-				for (map<string, Channel>::iterator itr = channel.begin(); itr != channel.end(); ++itr)
-					itr->second.member.erase(i);
+				for (set<string>::iterator itr = client[i].joined_channel.begin(); itr != client[i].joined_channel.end(); ++itr)
+					channel[*itr].member.erase(i);
+				client[i].joined_channel.clear();
 			}
 			else
 				for (vector<string>::iterator itr = arg.begin(); itr != arg.end(); ++itr)
@@ -239,8 +240,8 @@ public:
 					string channel_name(itr->begin() + 1,itr->end());
 
 					if (channel.find(channel_name) == channel.end())
-						channel[channel_name] = Channel();
-					channel[channel_name].member.insert(i);
+						channel[channel_name] = Channel(channel_name);
+					channel[channel_name].join(client[i]);
 				}
 		}
 		else if (command == "KICK")
@@ -255,7 +256,7 @@ public:
 		{
 			if (arg.size() != 2)
 			{
-				send(client[i].fd, "invalid num of args\n", 21, 0);
+				client[i].toss("invalid num of args\n");
 			}
 			else if (arg[0][0] == '#')
 			{
@@ -263,17 +264,17 @@ public:
 				if (channel.find(arg[0].substr(1, string::npos)) != channel.end())
 				{
 					for (set<int>::iterator itr = channel[arg[0].substr(1, string::npos)].member.begin(); itr != channel[arg[0].substr(1, string::npos)].member.end(); ++itr)
-						send(client[*itr].fd, client[i].msg.c_str(), client[i].msg.size(), 0);
+						client[*itr].toss(client[i].msg);
 				}
 				else
-					send(client[i].fd, (string("channel ") + arg[0] + " not found\n").c_str(), arg[0].size() + 21, 0);
+					client[i].toss(string("channel ") + arg[0] + " not found\n");
 			}
 			else
 			{
 				if (client_map.find(arg[0]) != client_map.end())
-					send(client[client_map[arg[0]]].fd, client[i].msg.c_str(), client[i].msg.size(), 0);
+					client[client_map[arg[0]]].toss(client[i].msg);
 				else
-					send(client[i].fd, "user not found\n", 16, 0);
+					client[i].toss("user not found\n");
 			}
 		}
 		else if (command == "NOTICE")
