@@ -223,11 +223,8 @@ public:
 		if (command == "JOIN")
 		{
 			if (arg.size() == 1 && arg[0] == "0")
-			{
 				for (set<string>::iterator itr = client[i].joined_channel.begin(); itr != client[i].joined_channel.end(); ++itr)
-					channel[*itr].member.erase(i);
-				client[i].joined_channel.clear();
-			}
+					channel[*itr].out(client[i]);
 			else
 				for (vector<string>::iterator itr = arg.begin(); itr != arg.end(); ++itr)
 				{
@@ -236,9 +233,7 @@ public:
 						cout << "///////////" << endl;
 						continue;
 					}
-
 					string channel_name(itr->begin() + 1,itr->end());
-
 					if (channel.find(channel_name) == channel.end())
 						channel[channel_name] = Channel(channel_name);
 					channel[channel_name].join(client[i]);
@@ -255,9 +250,7 @@ public:
 		else if (command == "PRIVMSG")
 		{
 			if (arg.size() != 2)
-			{
 				client[i].toss("invalid num of args\n");
-			}
 			else if (arg[0][0] == '#')
 			{
 				cout << arg[0].substr(1, string::npos) << endl;

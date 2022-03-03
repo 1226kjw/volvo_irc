@@ -32,6 +32,11 @@ public:
 		member.insert(c.idx);
 		c.joined_channel.insert(name);
 	}
+	void out(Client& c)
+	{
+		member.erase(c.idx);
+		c.joined_channel.erase(name);
+	}
 };
 
 #endif
