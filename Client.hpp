@@ -94,6 +94,10 @@ public:
 	{
 		send(fd, message.c_str(), message.size(), flag);
 	}
+	string prefix(void)
+	{
+		return string(":") + username + ' ';
+	}
 };
 
 #endif

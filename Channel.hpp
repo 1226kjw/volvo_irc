@@ -27,6 +27,10 @@ public:
 	}
 	~Channel() {}
 
+	void sendMsg(map<int, Client> &client, int i, int self=1)
+	{
+		
+	}
 	void join(Client &c)
 	{
 		member.insert(c.idx);

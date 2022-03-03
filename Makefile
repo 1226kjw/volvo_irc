@@ -1,9 +1,9 @@
 NAME	= ft_irc
 
 CC		= clang++ 
-CFLAGS	= -Wall -Wextra #-Werror -std=c++98
+CFLAGS	= -Wall -Wextra -Werror #-std=c++98
 
-SRCS	= main.cpp
+SRCS	= main.cpp Server.cpp
 OBJS	= $(SRCS:.cpp=.o)
 DEPS	= $(SRCS:.cpp=.d)
 
