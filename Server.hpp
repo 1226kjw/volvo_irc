@@ -198,7 +198,6 @@ public:
 		string command = tok[0];
 		vector<string> arg(tok.begin() + 1, tok.end());
 
-
 		if (!client[i].is_registered)
 		{
 			if (!client[i].is_authenticated)
@@ -206,16 +205,16 @@ public:
 				if (command == "PASS")
 					client[i].authenticate(passwd, arg);
 				else
-					client[i].toss("authenticate first\n");
+					client[i].sendMsg("authenticate first\n");
 			}
 			else if (command == "PASS")
-				client[i].toss("already authenticated\n");
+				client[i].sendMsg("already authenticated\n");
 			else if (command == "NICK")
 				client[i].nick(client_map, arg);
 			else if (command == "USER")
 				client[i].user(arg);
 			else
-				client[i].toss("register first\n");
+				client[i].sendMsg("register first\n");
 			client[i].msg = "";
 			return ;
 		}
@@ -229,13 +228,10 @@ public:
 				for (vector<string>::iterator itr = arg.begin(); itr != arg.end(); ++itr)
 				{
 					if (itr->front() != '#')
-					{
-						cout << "///////////" << endl;
-						continue;
-					}
+						client[i].sendMsg("invalid arg\n");
 					string channel_name(itr->begin() + 1,itr->end());
 					if (channel.find(channel_name) == channel.end())
-						channel[channel_name] = Channel(channel_name);
+						channel[channel_name] = Channel(channel_name, client[i].nickname);
 					channel[channel_name].join(client[i]);
 				}
 		}
@@ -250,24 +246,24 @@ public:
 		else if (command == "PRIVMSG")
 		{
 			if (arg.size() != 2)
-				client[i].toss("invalid num of args\n");
+				client[i].sendMsg("invalid num of args\n");
 			else if (arg[0][0] == '#')
 			{
 				cout << arg[0].substr(1, string::npos) << endl;
 				if (channel.find(arg[0].substr(1, string::npos)) != channel.end())
 				{
 					for (set<int>::iterator itr = channel[arg[0].substr(1, string::npos)].member.begin(); itr != channel[arg[0].substr(1, string::npos)].member.end(); ++itr)
-						client[*itr].toss(client[i].msg);
+						client[*itr].sendMsg(client[i].msg);
 				}
 				else
-					client[i].toss(string("channel ") + arg[0] + " not found\n");
+					client[i].sendMsg(string("channel ") + arg[0] + " not found\n");
 			}
 			else
 			{
 				if (client_map.find(arg[0]) != client_map.end())
-					client[client_map[arg[0]]].toss(client[i].msg);
+					client[client_map[arg[0]]].sendMsg(client[i].msg);
 				else
-					client[i].toss("user not found\n");
+					client[i].sendMsg("user not found\n");
 			}
 		}
 		else if (command == "NOTICE")
@@ -277,6 +273,10 @@ public:
 		else if (command == "QUIT")
 		{
 			
+		}
+		else
+		{
+			client[i].sendMsg("invalid command\n");
 		}
 		client[i].msg = "";
 	}

@@ -16,7 +16,7 @@ public:
 	{
 		*this = c;
 	}
-	Channel(string name) : name(name) {}
+	Channel(string name, string manager) : name(name), manager(manager) {}
 	Channel& operator=(const Channel& c)
 	{
 		name = c.name;

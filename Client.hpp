@@ -47,24 +47,24 @@ public:
 	{
 		if (arg.size() == 1 && passwd == arg[0])
 		{
-			toss("authenticated\n");
+			sendMsg("authenticated\n");
 			is_authenticated = true;
 		}
 		else
 		{
-			toss("wrong pw\n");
+			sendMsg("wrong pw\n");
 		}
 	}
 	void nick(map<string, int> &client_map, vector<string> args)
 	{
 		if (args.size() != 1)
 		{
-			toss("invalid num of args\n");
+			sendMsg("invalid num of args\n");
 		}
 		string arg = args[0];
 		if (client_map.find(arg) != client_map.end())
 		{
-			toss("already taken.\n");
+			sendMsg("already taken.\n");
 			return ;
 		}
 		nickname = arg;
@@ -72,25 +72,25 @@ public:
 		if (is_authenticated && nickname != "" && username != "")
 		{
 			is_registered = true;
-			toss("registered\n");
+			sendMsg("registered\n");
 		}
 	}
 	void user(vector<string> args)
 	{
 		if (args.size() != 1)
 		{
-			toss("invalid num of args\n");
+			sendMsg("invalid num of args\n");
 			return ;
 		}
 		username = args[0];
 		if (is_authenticated && nickname != "" && username != "")
 		{
 			is_registered = true;
-			toss("registered\n");
+			sendMsg("registered\n");
 		}
 	}
 
-	void toss(string message, int flag=0)
+	void sendMsg(string message, int flag=0)
 	{
 		send(fd, message.c_str(), message.size(), flag);
 	}
