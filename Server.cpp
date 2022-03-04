@@ -118,12 +118,12 @@ int Server::run()
 			}
 			else if (recv_size == 0)
 			{
-				close(client[i].fd);
-				cout << "byebye " << client[i].nickname << endl;
+				close(client[i].fd());
+				cout << "byebye " << client[i].nickname() << endl;
 				cout << "index " << i << " is available" << endl;
-				client_map.erase(client[i].nickname);
-				for (map<string, Channel>::iterator mitr = channel.begin(); mitr != channel.end(); ++mitr)
-					mitr->second.member.erase(i);
+				client_map.erase(client[i].nickname());
+				while (!client[i].joined_channel().empty())
+					channel[*client[i].joined_channel().begin()].out(client[i]);
 				client_fd[i].events = 0;
 				client_fd[i].fd = -1;
 				available_index.push(-i);
@@ -132,24 +132,22 @@ int Server::run()
 			{
 				buf[recv_size] = 0;
 				client[i].feed(buf);
-				if (*--client[i].msg.end() == '\n')
+				if (*--client[i].message().end() == '\n')
 					cmd(i);
 			}
 		}
 	}
 }
 
-// client[i].fd == client_fd[i].fd
-// i != client[i].fd
 void Server::cmd(int i)
 {
-	if (client[i].msg == "\n")
+	if (client[i].message() == "\n")
 	{
-		client[i].msg = "";
+		client[i].message("");
 		return ;
 	}
-	cout << "from " << i << ':' << client[i].msg;
-	vector<string> tok = split(client[i].msg);
+	cout << "from " << i << ':' << client[i].message();
+	vector<string> tok = split(client[i].message());
 	if (tok.back().back() == '\n')
 		tok.back().pop_back();
 	
@@ -161,7 +159,7 @@ void Server::cmd(int i)
 
 	try
 	{
-		if (!client[i].is_registered)
+		if (!client[i].is_registered())
 			enroll(i, command, arg);
 		else if (command == "JOIN")
 			join(i, arg);
@@ -180,11 +178,11 @@ void Server::cmd(int i)
 	{
 		client[i].sendMsg(e.what());
 	}
-	client[i].msg = "";
+	client[i].message("");
 }
 void Server::enroll(int i, string command, vector<string> arg)
 {
-	if (!client[i].is_authenticated)
+	if (!client[i].is_authenticated())
 	{
 		if (command == "PASS")
 			client[i].authenticate(passwd, arg);
@@ -199,13 +197,13 @@ void Server::enroll(int i, string command, vector<string> arg)
 		client[i].user(arg);
 	else
 		client[i].sendMsg("register first\n");
-	client[i].msg = "";
+	client[i].message("");
 }
 void Server::join(int i, vector<string> arg)
 {
 	if (arg.size() == 1 && arg[0] == "0")
-		while (!client[i].joined_channel.empty())
-			channel[*client[i].joined_channel.begin()].out(client[i]);
+		while (!client[i].joined_channel().empty())
+			channel[*client[i].joined_channel().begin()].out(client[i]);
 	else
 		for (vector<string>::iterator itr = arg.begin(); itr != arg.end(); ++itr)
 		{
@@ -215,38 +213,29 @@ void Server::join(int i, vector<string> arg)
 				return ;
 			}
 			if (channel.find(*itr) == channel.end())
-				channel[*itr] = Channel(*itr, client[i].nickname);
+				channel[*itr] = Channel(*itr, client[i].nickname());
 			channel[*itr].join(client[i]);
 		}
 }
 
 void Server::part(int i, vector<string> arg)
 {
-	// if (arg.size() == 1)
-	// 	arg.push_back("");
-	// if (arg.size() != 2)
-	// 	throw std::invalid_argument("invalid num of args\n");
+	if (arg.size() == 1)
+		arg.push_back("");
+	if (arg.size() != 2)
+		throw std::invalid_argument("invalid num of args\n");
 	
-	// vector<string> c = split(arg[0], ',');
-	// if (c.size() == 1)
-	// {
-
-	// }
-	// else
-	// {
-	// 	for (int i = 0; i < c.size(); ++i)
-	// 		part(i, vector<string>(1, arg[i]));
-	// }
-	// for (vector<string>::iter)
-	// if (channel)
-
-
-
-}
-
-void Server::list(int i, vector<string> arg)
-{
-	// if (arg.size() != 1)
+	vector<string> c = split(arg[0], ',');
+	if (c.size() == 1)
+	{
+		channel[arg[0]].sendMsg(client, i, client[i].prefix() + client[i].message());
+		channel[arg[0]].out(client[i]);
+	}
+	else
+	{
+		for (size_t i = 0; i < c.size(); ++i)
+			part(i, vector<string>(1, arg[i]));
+	}
 }
 
 void Server::kick(int i, vector<string> arg)
@@ -260,11 +249,13 @@ void Server::kick(int i, vector<string> arg)
 		client[i].sendMsg("invalid arg\n");
 	else if (channel.find(arg[0]) == channel.end())
 		client[i].sendMsg("invalid channel\n");
-	else if (channel[arg[0]].member.find(client_map[arg[1]]) == channel[arg[0]].member.end())
+	else if (channel[arg[0]].isin(client_map[arg[1]]))
 		client[i].sendMsg("invalid user\n");
+	else if (channel[arg[0]].manager() != client[i].username())
+		client[i].sendMsg("not authorized\n");
 	else
 	{
-		channel[arg[0]].sendMsg(client, i, client[i].prefix() + client[i].msg);
+		channel[arg[0]].sendMsg(client, i, client[i].prefix() + client[i].message());
 		channel[arg[0]].out(client[client_map[arg[1]]]);
 	}
 }
@@ -278,14 +269,14 @@ void Server::privmsg(int i, vector<string> arg)
 		if (isin(itr->front(), CHANNEL_PREFIX))
 		{
 			if (channel.find(*itr) != channel.end())
-				channel[*itr].sendMsg(client, i, client[i].prefix() + client[i].msg);
+				channel[*itr].sendMsg(client, i, client[i].prefix() + client[i].message());
 			else
 				client[i].sendMsg(string("No such channel: ") + *itr + "\n");
 		}
 		else
 		{
 			if (client_map.find(*itr) != client_map.end())
-				client[client_map[*itr]].sendMsg(client[i].prefix() + client[i].msg);
+				client[client_map[*itr]].sendMsg(client[i].prefix() + client[i].message());
 			else
 				client[i].sendMsg(string("No such client: ") + *itr + "\n");
 		}
@@ -293,17 +284,17 @@ void Server::privmsg(int i, vector<string> arg)
 }
 void Server::quit(int i, vector<string> arg)
 {
-	for (set<string>::iterator itr = client[i].joined_channel.begin(); itr != client[i].joined_channel.end(); ++itr)
+	for (set<string>::iterator itr = client[i].joined_channel().begin(); itr != client[i].joined_channel().end(); ++itr)
 	{
 		vector<string> tmp = vector<string>(1, *itr);
 		tmp.push_back(".");
 		privmsg(i, tmp);
 	}
-	while (!client[i].joined_channel.empty())
-		channel[*client[i].joined_channel.begin()].out(client[i]);
-	cout << "byebye " << client[i].nickname << endl;
-	close(client[i].fd);
-	client_map.erase(client[i].nickname);
+	while (!client[i].joined_channel().empty())
+		channel[*client[i].joined_channel().begin()].out(client[i]);
+	cout << "byebye " << client[i].nickname() << endl;
+	close(client[i].fd());
+	client_map.erase(client[i].nickname());
 	client_fd[i].events = 0;
 	client_fd[i].fd = -1;
 	available_index.push(-i);

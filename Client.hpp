@@ -12,43 +12,44 @@ using std::priority_queue;
 
 class Client
 {
-public:
-	set<string> joined_channel;
-	bool is_authenticated;
-	bool is_registered;
-	string nickname;
-	string username;
-	string msg;
-	int idx;
-	int fd;
+private:
+	set<string> _joined_channel;
+	bool _is_authenticated;
+	bool _is_registered;
+	string _nickname;
+	string _username;
+	string _msg;
+	int _idx;
+	int _fd;
 
-	Client() : is_authenticated(false), is_registered(false), nickname(""), username(""), msg(""), idx(-1), fd(-1) {}
-	Client(int idx, int fd) : is_authenticated(false), is_registered(false), nickname(""), username(""), msg(""), idx(idx), fd(fd) {}
+public:
+	Client() : _is_authenticated(false), _is_registered(false), _nickname(""), _username(""), _msg(""), _idx(-1), _fd(-1) {}
+	Client(int idx, int fd) : _is_authenticated(false), _is_registered(false), _nickname(""), _username(""), _msg(""), _idx(idx), _fd(fd) {}
 	Client(const Client& a)
 	{
 		*this = a;
 	}
 	Client& operator=(const Client& a)
 	{
-		is_authenticated = a.is_authenticated;
-		is_registered = a.is_registered;
-		nickname = a.nickname;
-		username = a.username;
-		msg = a.msg;
-		idx = a.idx;
-		fd = a.fd;
+		_is_authenticated = a._is_authenticated;
+		_is_registered = a._is_registered;
+		_nickname = a._nickname;
+		_username = a._username;
+		_msg = a._msg;
+		_idx = a._idx;
+		_fd = a._fd;
 		return *this;
 	}
 	void feed(char *buf)
 	{
-		msg += buf;
+		_msg += buf;
 	}
 	void authenticate(string passwd, vector<string> arg)
 	{
 		if (arg.size() == 1 && passwd == arg[0])
 		{
 			sendMsg("authenticated\n");
-			is_authenticated = true;
+			_is_authenticated = true;
 		}
 		else
 		{
@@ -67,11 +68,11 @@ public:
 			sendMsg("already taken.\n");
 			return ;
 		}
-		nickname = arg;
-		client_map[arg] = idx;
-		if (is_authenticated && nickname != "" && username != "")
+		_nickname = arg;
+		client_map[arg] = _idx;
+		if (_is_authenticated && _nickname != "" && _username != "")
 		{
-			is_registered = true;
+			_is_registered = true;
 			sendMsg("registered\n");
 		}
 	}
@@ -82,21 +83,57 @@ public:
 			sendMsg("invalid num of args\n");
 			return ;
 		}
-		username = args[0];
-		if (is_authenticated && nickname != "" && username != "")
+		_username = args[0];
+		if (_is_authenticated && _nickname != "" && _username != "")
 		{
-			is_registered = true;
+			_is_registered = true;
 			sendMsg("registered\n");
 		}
 	}
-
 	void sendMsg(string message, int flag=0)
 	{
-		send(fd, message.c_str(), message.size(), flag);
+		send(_fd, message.c_str(), message.size(), flag);
 	}
 	string prefix(void)
 	{
-		return string(":") + username + ' ';
+		return string(":") + _username + ' ';
+	}
+
+	bool is_registered(void)
+	{
+		return _is_registered;
+	}
+	bool is_authenticated(void)
+	{
+		return _is_authenticated;
+	}
+	string message(void)
+	{
+		return _msg;
+	}
+	void message(string s)
+	{
+		_msg = s;
+	}
+	set<string>& joined_channel(void)
+	{
+		return _joined_channel;
+	}
+	string nickname(void)
+	{
+		return _nickname;
+	}
+	string username(void)
+	{
+		return _username;
+	}
+	int  idx(void)
+	{
+		return _idx;
+	}
+	int  fd(void)
+	{
+		return _fd;
 	}
 };
 

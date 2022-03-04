@@ -33,7 +33,7 @@ using std::priority_queue;
 
 class Server
 {
-public:
+private:
 	const int port;
 	const string passwd;
 	map<string, int> client_map;
@@ -50,6 +50,7 @@ public:
 	int max_index;
 	int idx;
 
+public:
 	Server(int port, string pw);
 	~Server();
 	int setup();
@@ -58,7 +59,6 @@ public:
 	void enroll(int i, string command, vector<string> arg);
 	void join(int i, vector<string> arg);
 	void part(int i, vector<string> arg);
-	void list(int i, vector<string> arg);
 	void kick(int i, vector<string> arg);
 	void privmsg(int i, vector<string> arg);
 	void quit(int i, vector<string> arg);
