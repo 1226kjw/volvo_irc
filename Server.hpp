@@ -57,6 +57,7 @@ public:
 	void cmd(int i);
 	void enroll(int i, string command, vector<string> arg);
 	void join(int i, vector<string> arg);
+	void part(int i, vector<string> arg);
 	void list(int i, vector<string> arg);
 	void kick(int i, vector<string> arg);
 	void privmsg(int i, vector<string> arg);

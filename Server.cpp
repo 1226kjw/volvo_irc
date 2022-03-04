@@ -143,6 +143,11 @@ int Server::run()
 // i != client[i].fd
 void Server::cmd(int i)
 {
+	if (client[i].msg == "\n")
+	{
+		client[i].msg = "";
+		return ;
+	}
 	cout << "from " << i << ':' << client[i].msg;
 	vector<string> tok = split(client[i].msg);
 	if (tok.back().back() == '\n')
@@ -163,7 +168,7 @@ void Server::cmd(int i)
 		else if (command == "KICK")
 			kick(i, arg);
 		else if (command == "PART")
-			;
+			part(i, arg);
 		else if (command == "PRIVMSG" || command == "NOTICE")
 			privmsg(i, arg);
 		else if (command == "QUIT")
@@ -204,7 +209,7 @@ void Server::join(int i, vector<string> arg)
 	else
 		for (vector<string>::iterator itr = arg.begin(); itr != arg.end(); ++itr)
 		{
-			if (isin(itr->front(), CHANNEL_PREFIX))
+			if (!isin(itr->front(), CHANNEL_PREFIX))
 			{
 				client[i].sendMsg("invalid arg\n");
 				return ;
@@ -213,6 +218,30 @@ void Server::join(int i, vector<string> arg)
 				channel[*itr] = Channel(*itr, client[i].nickname);
 			channel[*itr].join(client[i]);
 		}
+}
+
+void Server::part(int i, vector<string> arg)
+{
+	// if (arg.size() == 1)
+	// 	arg.push_back("");
+	// if (arg.size() != 2)
+	// 	throw std::invalid_argument("invalid num of args\n");
+	
+	// vector<string> c = split(arg[0], ',');
+	// if (c.size() == 1)
+	// {
+
+	// }
+	// else
+	// {
+	// 	for (int i = 0; i < c.size(); ++i)
+	// 		part(i, vector<string>(1, arg[i]));
+	// }
+	// for (vector<string>::iter)
+	// if (channel)
+
+
+
 }
 
 void Server::list(int i, vector<string> arg)
@@ -227,14 +256,17 @@ void Server::kick(int i, vector<string> arg)
 	if (arg.size() != 3)
 		throw std::invalid_argument("invalid num of args\n");
 
-	if (isin(arg[0][0], CHANNEL_PREFIX))
+	if (!isin(arg[0][0], CHANNEL_PREFIX))
 		client[i].sendMsg("invalid arg\n");
 	else if (channel.find(arg[0]) == channel.end())
 		client[i].sendMsg("invalid channel\n");
 	else if (channel[arg[0]].member.find(client_map[arg[1]]) == channel[arg[0]].member.end())
 		client[i].sendMsg("invalid user\n");
-	client[i].sendMsg(arg[2]);
-	channel[arg[0]].out(client[i]);
+	else
+	{
+		channel[arg[0]].sendMsg(client, i, client[i].prefix() + client[i].msg);
+		channel[arg[0]].out(client[client_map[arg[1]]]);
+	}
 }
 
 void Server::privmsg(int i, vector<string> arg)
@@ -246,7 +278,7 @@ void Server::privmsg(int i, vector<string> arg)
 		if (isin(itr->front(), CHANNEL_PREFIX))
 		{
 			if (channel.find(*itr) != channel.end())
-				channel[*itr].sendMsg(client, i, client[i].msg);
+				channel[*itr].sendMsg(client, i, client[i].prefix() + client[i].msg);
 			else
 				client[i].sendMsg(string("No such channel: ") + *itr + "\n");
 		}
