@@ -20,6 +20,7 @@
 
 #define CLIENT_MAX 1000
 #define BUFFER_SIZE 1024
+#define CHANNEL_PREFIX "#&+!"
 
 using std::cout;
 using std::cerr;
@@ -56,6 +57,8 @@ public:
 	void cmd(int i);
 	void enroll(int i, string command, vector<string> arg);
 	void join(int i, vector<string> arg);
+	void list(int i, vector<string> arg);
+	void kick(int i, vector<string> arg);
 	void privmsg(int i, vector<string> arg);
 	void quit(int i, vector<string> arg);
 };

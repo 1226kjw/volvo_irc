@@ -27,9 +27,11 @@ public:
 	}
 	~Channel() {}
 
-	void sendMsg(map<int, Client> &client, int i, int self=1)
+	void sendMsg(map<int, Client> &client, int i, string msg, int self=1)
 	{
-		
+		for (set<int>::iterator itr = member.begin(); itr != member.end(); ++itr)
+			if (self || i != *itr)
+				client[*itr].sendMsg(msg);
 	}
 	void join(Client &c)
 	{

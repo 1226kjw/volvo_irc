@@ -24,6 +24,11 @@ vector<string> split(string str, char d=' ')
 	return ret;
 }
 
+bool isin(char c, string pool)
+{
+	return (pool.find(c) != string::npos);
+}
+
 Server::Server(int port, string pw): port(port), passwd(pw), clientaddr_len(sizeof(client_addr)) {}
 Server::~Server()
 {
@@ -156,13 +161,9 @@ void Server::cmd(int i)
 		else if (command == "JOIN")
 			join(i, arg);
 		else if (command == "KICK")
-		{
-			
-		}
+			kick(i, arg);
 		else if (command == "PART")
-		{
-			
-		}
+			;
 		else if (command == "PRIVMSG" || command == "NOTICE")
 			privmsg(i, arg);
 		else if (command == "QUIT")
@@ -203,24 +204,49 @@ void Server::join(int i, vector<string> arg)
 	else
 		for (vector<string>::iterator itr = arg.begin(); itr != arg.end(); ++itr)
 		{
-			if (itr->front() != '#')
+			if (isin(itr->front(), CHANNEL_PREFIX))
+			{
 				client[i].sendMsg("invalid arg\n");
+				return ;
+			}
 			if (channel.find(*itr) == channel.end())
 				channel[*itr] = Channel(*itr, client[i].nickname);
 			channel[*itr].join(client[i]);
 		}
 }
+
+void Server::list(int i, vector<string> arg)
+{
+	// if (arg.size() != 1)
+}
+
+void Server::kick(int i, vector<string> arg)
+{
+	if (arg.size() == 2)
+		arg.push_back("");
+	if (arg.size() != 3)
+		throw std::invalid_argument("invalid num of args\n");
+
+	if (isin(arg[0][0], CHANNEL_PREFIX))
+		client[i].sendMsg("invalid arg\n");
+	else if (channel.find(arg[0]) == channel.end())
+		client[i].sendMsg("invalid channel\n");
+	else if (channel[arg[0]].member.find(client_map[arg[1]]) == channel[arg[0]].member.end())
+		client[i].sendMsg("invalid user\n");
+	client[i].sendMsg(arg[2]);
+	channel[arg[0]].out(client[i]);
+}
+
 void Server::privmsg(int i, vector<string> arg)
 {
-	// if (arg.size() != 2)
-	// 	throw std::invalid_argument("invalid num of args\n");
+	if (arg.size() < 2)
+		throw std::invalid_argument("invalid num of args\n");
 	for (vector<string>::iterator itr = arg.begin(); itr != --arg.end(); ++itr)
 	{
-		if (itr->front() == '#')
+		if (isin(itr->front(), CHANNEL_PREFIX))
 		{
 			if (channel.find(*itr) != channel.end())
-				for (set<int>::iterator iitr = channel[*itr].member.begin(); iitr != channel[*itr].member.end(); ++iitr)
-					client[*iitr].sendMsg(client[i].prefix() + client[i].msg);
+				channel[*itr].sendMsg(client, i, client[i].msg);
 			else
 				client[i].sendMsg(string("No such channel: ") + *itr + "\n");
 		}
