@@ -7,8 +7,10 @@ Client::Client(int idx, int fd) : _is_authenticated(false), _is_registered(false
 Client::Client(const Client& a)
 {
 	*this = a;
-
 }
+
+Client::~Client() {}
+
 
 Client& Client::operator=(const Client& a)
 {
@@ -27,26 +29,21 @@ void Client::feed(char *buf)
 	_msg += buf;
 }
 
-int Client::authenticate(string passwd, vector<string> arg)
+void Client::authenticate(string passwd, vector<string> arg)
 {
-	if (arg.size() == 1 && passwd == arg[0])
+	if (passwd == arg[0])
 	{
 		sendMsg("authenticated\n");
 		_is_authenticated = true;
-        return VALID;
-    }
-    else
-		return WRONG_PW;
+	}
+	else
+		sendMsg("wrong passwd\n");
 }
 
-int Client::nick(map<string, int> &client_map, vector<string> args)
+void Client::nick(map<string, int>& client_map, string arg)
 {
-	if (args.size() != 1)
-    	return NEEDMOREPARAMS;
-    string arg = args[0];
-	if (client_map.find(arg) != client_map.end())
-		return NICKNAMEINUSE;
-	// if (isin())
+	if (_nickname != "")
+		client_map.erase(_nickname);
 	_nickname = arg;
 	client_map[arg] = _idx;
 	if (_is_authenticated && _nickname != "" && _username != "")
@@ -54,20 +51,16 @@ int Client::nick(map<string, int> &client_map, vector<string> args)
 		_is_registered = true;
 		sendMsg("registered\n");
 	}
-	return VALID;
 }
 
-int Client::user(vector<string> args)
+void Client::user(vector<string> args)
 {
-	if (args.size() != 1)
-		return NEEDMOREPARAMS;
 	_username = args[0];
 	if (_is_authenticated && _nickname != "" && _username != "")
 	{
 		_is_registered = true;
 		sendMsg("registered\n");
 	}
-	return VALID;
 }
 
 void Client::sendMsg(string message, int flag)

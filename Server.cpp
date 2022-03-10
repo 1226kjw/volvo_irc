@@ -87,23 +87,17 @@ int Server::run()
 				cerr << "accept error" << endl;
 				return 1;
 			}
-			cout << "ip  : " << inet_ntoa(client_addr.sin_addr) << endl;
-			cout << "port: " << ntohs(client_addr.sin_port) << endl;
-			cout << "client accepted on fd " << client_socket << endl;
 			idx = -available_index.top();
 			available_index.pop();
 			cout << "idx : " << idx << endl << endl;
-			if (idx != max_index)
-			{
-				client_fd[idx].fd = client_socket;
-				client_fd[idx].events = POLLIN;
-			}
-			else
-			{
-				client_fd[max_index].fd = client_socket;
-				client_fd[max_index++].events = POLLIN;
-			}
+			client_fd[idx].fd = client_socket;
+			client_fd[idx].events = POLLIN;
 			client[idx] = Client(idx, client_socket);
+			if (idx == max_index)
+				++max_index;
+			cout << "ip  : " << inet_ntoa(client_addr.sin_addr) << endl;
+			cout << "port: " << ntohs(client_addr.sin_port) << endl;
+			cout << "client accepted on\nfd : " << client_socket << endl;
 			continue ;
 		}
 		for (int i = 1; i < max_index && poll_ret; ++i)
@@ -148,9 +142,7 @@ void Server::cmd(int i)
 		return ;
 	}
 	cout << "from " << i << ':' << client[i].message();
-	vector<string> tok = split(client[i].message());
-	if (tok.back().back() == '\n')
-		tok.back().pop_back();
+	vector<string> tok = split(client[i].message().substr(0, client[i].message().size() - 1));
 	
 	if (tok.size() == 0)
 		return ;
@@ -160,8 +152,14 @@ void Server::cmd(int i)
 
 	try
 	{
-		if (!client[i].is_registered())
-			enroll(i, command, arg);
+		if (!client[i].is_registered() && command != "PASS" && command != "NICK" && command != "USER")
+			throw std::invalid_argument("register first\n");
+		if (command == "PASS")
+			pass(i, arg);
+		else if (command == "NICK")
+			nick(i, arg);
+		else if (command == "USER")
+			user(i, arg);
 		else if (command == "JOIN")
 			join(i, arg);
 		else if (command == "KICK")
@@ -182,46 +180,30 @@ void Server::cmd(int i)
 	client[i].message("");
 }
 
-void Server::enroll(int i, string command, vector<string> arg)
+void Server::pass(int i, vector<string> arg)
 {
-	int state;
-	if (!client[i].is_authenticated())
-	{
-		if (command == "PASS")
-			state = client[i].authenticate(passwd, arg);
-		else
-			state = UNAUTHENTICATED;
-	}
-	else if (command == "PASS")
-		state = ALREADY_AUTHENTICATED;
-	else if (command == "NICK")
-		state = client[i].nick(client_map, arg);
-	else if (command == "USER")
-		state = client[i].user(arg);
-	else
-		state = NOT_REGISTERED;
+	if (client[i].is_authenticated())
+		throw std::invalid_argument("already authenticated\n");
+	if (arg.size() != 1)
+		throw std::invalid_argument("invalid num of args\n");
+	client[i].authenticate(passwd, arg);
+}
 
-	switch (state)
-	{
-	case VALID:
-		break;
-	case WRONG_PW:
-		throw ERR_WRONG_PW();
-	case NICKNAMEINUSE:
-		throw ERR_NICKNAMEINUSE();
-	case NEEDMOREPARAMS:
-		throw ERR_NEEDMOREPARAMS();
-	case UNAUTHENTICATED:
-		throw ERR_UNAUTHENTICATED();
-	case ALREADY_AUTHENTICATED:
-		throw ERR_ALREADY_AUTHENTICATED();
-	case NOT_REGISTERED:
-		throw ERR_NOT_REGISTERED();
-	default:
-		cerr << "unknown error" << endl;
-		break;
-	}
-	client[i].message("");
+void Server::nick(int i, vector<string> arg)
+{
+	if (arg.size() != 1)
+		throw std::invalid_argument("invalid num of args\n");
+	if (client_map.find(arg[0]) != client_map.end())
+		throw std::invalid_argument("already taken\n");
+	client_map[arg[0]] = i;
+	client[i].nick(client_map, arg[0]);
+}
+
+void Server::user(int i, vector<string> arg)
+{
+	if (arg.size() != 4)
+		throw std::invalid_argument("invalid num of args\n");
+	client[i].user(arg);	
 }
 
 void Server::join(int i, vector<string> arg)
@@ -232,7 +214,7 @@ void Server::join(int i, vector<string> arg)
 	else
 		for (vector<string>::iterator itr = arg.begin(); itr != arg.end(); ++itr)
 		{
-			if (!isin(itr->front(), CHANNEL_PREFIX))
+			if (!isin(itr->at(0), CHANNEL_PREFIX))
 				throw std::invalid_argument("invalid arg\n");
 			if (channel.find(*itr) == channel.end())
 				channel[*itr] = Channel(*itr, client[i].nickname());
@@ -272,7 +254,7 @@ void Server::privmsg(int i, vector<string> arg)
 		throw std::invalid_argument("invalid num of args\n");
 	for (vector<string>::iterator itr = arg.begin(); itr != --arg.end(); ++itr)
 	{
-		if (isin(itr->front(), CHANNEL_PREFIX))
+		if (isin(itr->at(0), CHANNEL_PREFIX))
 		{
 			if (channel.find(*itr) == channel.end())
 				throw std::invalid_argument("no such channel\n");

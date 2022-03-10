@@ -40,11 +40,12 @@ public:
 	Client();
 	Client(int idx, int fd);
 	Client(const Client& a);
+	~Client();
 	Client& operator=(const Client& a);
 	void feed(char *buf);
-	int authenticate(string passwd, vector<string> arg);
-	int nick(map<string, int> &client_map, vector<string> args);
-	int user(vector<string> args);
+	void authenticate(string passwd, vector<string> arg);
+	void nick(map<string, int>& client_map, string arg);
+	void user(vector<string> args);
 	void sendMsg(string message, int flag=0);
 	string prefix(void);
 

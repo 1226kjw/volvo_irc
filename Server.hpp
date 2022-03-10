@@ -53,6 +53,20 @@ private:
 
 public:
 
+	Server(int port, string pw);
+	~Server();
+
+	int setup();
+	int run();
+	void cmd(int i);
+	void pass(int i, vector<string> arg);
+	void nick(int i, vector<string> arg);
+	void user(int i, vector<string> arg);
+	void join(int i, vector<string> arg);
+	void part(int i, vector<string> arg);
+	void kick(int i, vector<string> arg);
+	void privmsg(int i, vector<string> arg);
+	void quit(int i);
 
 	class ERR_WRONG_PW : public std::exception
 	{
@@ -89,19 +103,6 @@ public:
 	public:
 		virtual const char* what() const throw();
 	};
-
-
-	Server(int port, string pw);
-	~Server();
-	int setup();
-	int run();
-	void cmd(int i);
-	void enroll(int i, string command, vector<string> arg);
-	void join(int i, vector<string> arg);
-	void part(int i, vector<string> arg);
-	void kick(int i, vector<string> arg);
-	void privmsg(int i, vector<string> arg);
-	void quit(int i);
 };
 
 #endif
