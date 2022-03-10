@@ -70,7 +70,7 @@ int Client::user(vector<string> args)
 	return VALID;
 }
 
-void Client::sendMsg(string message, int flag=0)
+void Client::sendMsg(string message, int flag)
 {
 	send(_fd, message.c_str(), message.size(), flag);
 }

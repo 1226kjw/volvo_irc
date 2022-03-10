@@ -1,6 +1,6 @@
 #include "Utils.hpp"
 
-vector<string> split(string str, char d=' ')
+vector<string> split(string str, char d)
 {
 	vector<string> ret;
 	string istr;

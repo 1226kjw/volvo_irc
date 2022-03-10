@@ -25,7 +25,7 @@ bool Channel::isin(int i)
 	return _member.find(i) != _member.end();
 }
 
-void Channel::sendMsg(map<int, Client> &client, int i, string msg, int self=1)
+void Channel::sendMsg(map<int, Client> &client, int i, string msg, int self)
 {
 	for (set<int>::iterator itr = _member.begin(); itr != _member.end(); ++itr)
 		if (self || i != *itr)

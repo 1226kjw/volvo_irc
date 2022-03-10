@@ -87,8 +87,8 @@ int Server::run()
 				cerr << "accept error" << endl;
 				return 1;
 			}
-			// cout << "ip  : " << inet_ntoa(client_addr.sin_addr) << endl;
-			// cout << "port: " << ntohs(client_addr.sin_port) << endl;
+			cout << "ip  : " << inet_ntoa(client_addr.sin_addr) << endl;
+			cout << "port: " << ntohs(client_addr.sin_port) << endl;
 			cout << "client accepted on fd " << client_socket << endl;
 			idx = -available_index.top();
 			available_index.pop();

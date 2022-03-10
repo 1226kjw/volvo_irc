@@ -17,7 +17,7 @@
 
 # include "Client.hpp"
 # include "Channel.hpp"
-#include "Utils.hpp"
+# include "Utils.hpp"
 
 #define CLIENT_MAX 1000
 #define BUFFER_SIZE 1024

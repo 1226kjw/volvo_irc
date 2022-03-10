@@ -6,6 +6,7 @@
 # include <map>
 
 # include "Client.hpp"
+# include "Utils.hpp"
 
 using std::string;
 using std::set;
