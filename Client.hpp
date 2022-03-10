@@ -1,14 +1,28 @@
 #ifndef CLIENT_HPP
 # define CLIENT_HPP
 
-using std::cout;
-using std::cerr;
-using std::endl;
+# include <string>
+# include <vector>
+# include <map>
+# include <set>
+
+# include <sys/socket.h>
+
 using std::string;
+using std::vector;
 using std::map;
 using std::set;
-using std::vector;
-using std::priority_queue;
+
+enum clientState
+{
+	VALID,
+	WRONG_PW,
+	NICKNAMEINUSE,
+	NEEDMOREPARAMS,
+	UNAUTHENTICATED,
+	ALREADY_AUTHENTICATED,
+	NOT_REGISTERED
+};
 
 class Client
 {
@@ -23,118 +37,26 @@ private:
 	int _fd;
 
 public:
-	Client() : _is_authenticated(false), _is_registered(false), _nickname(""), _username(""), _msg(""), _idx(-1), _fd(-1) {}
-	Client(int idx, int fd) : _is_authenticated(false), _is_registered(false), _nickname(""), _username(""), _msg(""), _idx(idx), _fd(fd) {}
-	Client(const Client& a)
-	{
-		*this = a;
-	}
-	Client& operator=(const Client& a)
-	{
-		_is_authenticated = a._is_authenticated;
-		_is_registered = a._is_registered;
-		_nickname = a._nickname;
-		_username = a._username;
-		_msg = a._msg;
-		_idx = a._idx;
-		_fd = a._fd;
-		return *this;
-	}
-	void feed(char *buf)
-	{
-		_msg += buf;
-	}
-	void authenticate(string passwd, vector<string> arg)
-	{
-		if (arg.size() == 1 && passwd == arg[0])
-		{
-			sendMsg("authenticated\n");
-			_is_authenticated = true;
-		}
-		else
-		{
-			sendMsg("wrong pw\n");
-		}
-	}
-	void nick(map<string, int> &client_map, vector<string> args)
-	{
-		if (args.size() != 1)
-		{
-			sendMsg("invalid num of args\n");
-		}
-		string arg = args[0];
-		if (client_map.find(arg) != client_map.end())
-		{
-			sendMsg("already taken.\n");
-			return ;
-		}
-		_nickname = arg;
-		client_map[arg] = _idx;
-		if (_is_authenticated && _nickname != "" && _username != "")
-		{
-			_is_registered = true;
-			sendMsg("registered\n");
-		}
-	}
-	void user(vector<string> args)
-	{
-		if (args.size() != 1)
-		{
-			sendMsg("invalid num of args\n");
-			return ;
-		}
-		_username = args[0];
-		if (_is_authenticated && _nickname != "" && _username != "")
-		{
-			_is_registered = true;
-			sendMsg("registered\n");
-		}
-	}
-	void sendMsg(string message, int flag=0)
-	{
-		send(_fd, message.c_str(), message.size(), flag);
-	}
-	string prefix(void)
-	{
-		return string(":") + _username + ' ';
-	}
+	Client();
+	Client(int idx, int fd);
+	Client(const Client& a);
+	Client& operator=(const Client& a);
+	void feed(char *buf);
+	int authenticate(string passwd, vector<string> arg);
+	int nick(map<string, int> &client_map, vector<string> args);
+	int user(vector<string> args);
+	void sendMsg(string message, int flag=0);
+	string prefix(void);
 
-	bool is_registered(void)
-	{
-		return _is_registered;
-	}
-	bool is_authenticated(void)
-	{
-		return _is_authenticated;
-	}
-	string message(void)
-	{
-		return _msg;
-	}
-	void message(string s)
-	{
-		_msg = s;
-	}
-	set<string>& joined_channel(void)
-	{
-		return _joined_channel;
-	}
-	string nickname(void)
-	{
-		return _nickname;
-	}
-	string username(void)
-	{
-		return _username;
-	}
-	int  idx(void)
-	{
-		return _idx;
-	}
-	int  fd(void)
-	{
-		return _fd;
-	}
+	bool is_registered(void);
+	bool is_authenticated(void);
+	string message(void);
+	void message(string s);
+	set<string>& joined_channel(void);
+	string nickname(void);
+	string username(void);
+	int  idx(void);
+	int  fd(void);
 };
 
 #endif

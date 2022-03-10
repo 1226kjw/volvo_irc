@@ -1,32 +1,33 @@
 #include "Server.hpp"
 
-vector<string> split(string str, char d=' ')
+const char* Server::ERR_WRONG_PW::what() const throw()
 {
-	vector<string> ret;
-	string istr;
-	for (string::iterator c = str.begin(); c != str.end(); ++c)
-	{
-		if (istr == "" && *c == ':')
-		{
-			ret.push_back(str.substr(c - str.begin(), string::npos));
-			break ;
-		}
-		if (*c != d)
-			istr.push_back(*c);
-		else if (istr != "")
-		{
-			ret.push_back(istr);
-			istr = "";
-		}
-	}
-	if (istr != "")
-		ret.push_back(istr);
-	return ret;
+	return "Wrong password\n";
 }
 
-bool isin(char c, string pool)
+const char* Server::ERR_NICKNAMEINUSE::what() const throw()
 {
-	return (pool.find(c) != string::npos);
+	return "Nickname already taken\n";
+}
+
+const char* Server::ERR_NEEDMOREPARAMS::what() const throw()
+{
+	return "Need more parameters\n";
+}
+
+const char* Server::ERR_UNAUTHENTICATED::what() const throw()
+{
+	return "Unauthenticated\n";
+}
+
+const char* Server::ERR_ALREADY_AUTHENTICATED::what() const throw()
+{
+	return "Already authenticated\n";
+}
+
+const char* Server::ERR_NOT_REGISTERED::what() const throw()
+{
+	return "Not registered\n";
 }
 
 Server::Server(int port, string pw): port(port), passwd(pw), clientaddr_len(sizeof(client_addr)) {}
@@ -170,7 +171,7 @@ void Server::cmd(int i)
 		else if (command == "PRIVMSG" || command == "NOTICE")
 			privmsg(i, arg);
 		else if (command == "QUIT")
-			quit(i, arg);
+			quit(i);
 		else
 			client[i].sendMsg("invalid command\n");
 	}
@@ -180,25 +181,49 @@ void Server::cmd(int i)
 	}
 	client[i].message("");
 }
+
 void Server::enroll(int i, string command, vector<string> arg)
 {
+	int state;
 	if (!client[i].is_authenticated())
 	{
 		if (command == "PASS")
-			client[i].authenticate(passwd, arg);
+			state = client[i].authenticate(passwd, arg);
 		else
-			client[i].sendMsg("authenticate first\n");
+			state = UNAUTHENTICATED;
 	}
 	else if (command == "PASS")
-		client[i].sendMsg("already authenticated\n");
+		state = ALREADY_AUTHENTICATED;
 	else if (command == "NICK")
-		client[i].nick(client_map, arg);
+		state = client[i].nick(client_map, arg);
 	else if (command == "USER")
-		client[i].user(arg);
+		state = client[i].user(arg);
 	else
-		client[i].sendMsg("register first\n");
+		state = NOT_REGISTERED;
+
+	switch (state)
+	{
+	case VALID:
+		break;
+	case WRONG_PW:
+		throw ERR_WRONG_PW();
+	case NICKNAMEINUSE:
+		throw ERR_NICKNAMEINUSE();
+	case NEEDMOREPARAMS:
+		throw ERR_NEEDMOREPARAMS();
+	case UNAUTHENTICATED:
+		throw ERR_UNAUTHENTICATED();
+	case ALREADY_AUTHENTICATED:
+		throw ERR_ALREADY_AUTHENTICATED();
+	case NOT_REGISTERED:
+		throw ERR_NOT_REGISTERED();
+	default:
+		cerr << "unknown error" << endl;
+		break;
+	}
 	client[i].message("");
 }
+
 void Server::join(int i, vector<string> arg)
 {
 	if (arg.size() == 1 && arg[0] == "0")
@@ -208,10 +233,7 @@ void Server::join(int i, vector<string> arg)
 		for (vector<string>::iterator itr = arg.begin(); itr != arg.end(); ++itr)
 		{
 			if (!isin(itr->front(), CHANNEL_PREFIX))
-			{
-				client[i].sendMsg("invalid arg\n");
-				return ;
-			}
+				throw std::invalid_argument("invalid arg\n");
 			if (channel.find(*itr) == channel.end())
 				channel[*itr] = Channel(*itr, client[i].nickname());
 			channel[*itr].join(client[i]);
@@ -220,44 +242,28 @@ void Server::join(int i, vector<string> arg)
 
 void Server::part(int i, vector<string> arg)
 {
-	if (arg.size() == 1)
-		arg.push_back("");
-	if (arg.size() != 2)
+	if (arg.size() != 1)
 		throw std::invalid_argument("invalid num of args\n");
-	
-	vector<string> c = split(arg[0], ',');
-	if (c.size() == 1)
-	{
-		channel[arg[0]].sendMsg(client, i, client[i].prefix() + client[i].message());
-		channel[arg[0]].out(client[i]);
-	}
-	else
-	{
-		for (size_t i = 0; i < c.size(); ++i)
-			part(i, vector<string>(1, arg[i]));
-	}
+	if (channel.find(arg[0]) == channel.end())
+		throw std::invalid_argument("no such channel\n");
+	channel[arg[0]].sendMsg(client, i, client[i].prefix() + client[i].message());
+	channel[arg[0]].out(client[i]);
 }
 
 void Server::kick(int i, vector<string> arg)
 {
-	if (arg.size() == 2)
-		arg.push_back("");
-	if (arg.size() != 3)
+	if (arg.size() != 2)
 		throw std::invalid_argument("invalid num of args\n");
-
 	if (!isin(arg[0][0], CHANNEL_PREFIX))
-		client[i].sendMsg("invalid arg\n");
-	else if (channel.find(arg[0]) == channel.end())
-		client[i].sendMsg("invalid channel\n");
-	else if (channel[arg[0]].isin(client_map[arg[1]]))
-		client[i].sendMsg("invalid user\n");
-	else if (channel[arg[0]].manager() != client[i].username())
-		client[i].sendMsg("not authorized\n");
-	else
-	{
-		channel[arg[0]].sendMsg(client, i, client[i].prefix() + client[i].message());
-		channel[arg[0]].out(client[client_map[arg[1]]]);
-	}
+		throw std::invalid_argument("invalid arg\n");
+	if (channel.find(arg[0]) == channel.end())
+		throw std::invalid_argument("invalid channel\n");
+	if (channel[arg[0]].isin(client_map[arg[1]]))
+		throw std::invalid_argument("invalid user\n");
+	if (channel[arg[0]].manager() != client[i].username())
+		throw std::invalid_argument("not authorized\n");
+	channel[arg[0]].sendMsg(client, i, client[i].prefix() + client[i].message());
+	channel[arg[0]].out(client[client_map[arg[1]]]);
 }
 
 void Server::privmsg(int i, vector<string> arg)
@@ -268,21 +274,19 @@ void Server::privmsg(int i, vector<string> arg)
 	{
 		if (isin(itr->front(), CHANNEL_PREFIX))
 		{
-			if (channel.find(*itr) != channel.end())
-				channel[*itr].sendMsg(client, i, client[i].prefix() + client[i].message());
-			else
-				client[i].sendMsg(string("No such channel: ") + *itr + "\n");
+			if (channel.find(*itr) == channel.end())
+				throw std::invalid_argument("no such channel\n");
+			channel[*itr].sendMsg(client, i, client[i].prefix() + client[i].message());
 		}
 		else
 		{
-			if (client_map.find(*itr) != client_map.end())
-				client[client_map[*itr]].sendMsg(client[i].prefix() + client[i].message());
-			else
-				client[i].sendMsg(string("No such client: ") + *itr + "\n");
+			if (client_map.find(*itr) == client_map.end())
+				throw std::invalid_argument("no such user\n");
+			client[client_map[*itr]].sendMsg(client[i].prefix() + client[i].message());
 		}
 	}
 }
-void Server::quit(int i, vector<string> arg)
+void Server::quit(int i)
 {
 	for (set<string>::iterator itr = client[i].joined_channel().begin(); itr != client[i].joined_channel().end(); ++itr)
 	{

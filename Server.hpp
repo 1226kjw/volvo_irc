@@ -17,6 +17,7 @@
 
 # include "Client.hpp"
 # include "Channel.hpp"
+#include "Utils.hpp"
 
 #define CLIENT_MAX 1000
 #define BUFFER_SIZE 1024
@@ -51,6 +52,45 @@ private:
 	int idx;
 
 public:
+
+
+	class ERR_WRONG_PW : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+	class ERR_NICKNAMEINUSE : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+	
+	class ERR_NEEDMOREPARAMS : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+	class ERR_UNAUTHENTICATED : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+	
+	class ERR_ALREADY_AUTHENTICATED : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+	class ERR_NOT_REGISTERED : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+
 	Server(int port, string pw);
 	~Server();
 	int setup();
@@ -61,7 +101,7 @@ public:
 	void part(int i, vector<string> arg);
 	void kick(int i, vector<string> arg);
 	void privmsg(int i, vector<string> arg);
-	void quit(int i, vector<string> arg);
+	void quit(int i);
 };
 
 #endif
