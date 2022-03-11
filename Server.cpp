@@ -1,5 +1,14 @@
 #include "Server.hpp"
 
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::string;
+using std::map;
+using std::set;
+using std::vector;
+using std::priority_queue;
+
 const char* Server::ERR_WRONG_PW::what() const throw()
 {
 	return "Wrong password\n";

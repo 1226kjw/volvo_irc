@@ -23,25 +23,16 @@
 #define BUFFER_SIZE 1024
 #define CHANNEL_PREFIX "#&+!"
 
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::string;
-using std::map;
-using std::set;
-using std::vector;
-using std::priority_queue;
-
 class Server
 {
 private:
 	const int port;
-	const string passwd;
-	map<string, int> client_map;
-	map<string, Channel> channel;
-	map<int, Client> client;
+	const std::string passwd;
+	std::map<std::string, int> client_map;
+	std::map<std::string, Channel> channel;
+	std::map<int, Client> client;
 	struct pollfd client_fd[CLIENT_MAX];
-	priority_queue<int> available_index;
+	std::priority_queue<int> available_index;
 
 	struct sockaddr_in server_addr, client_addr;
 	socklen_t clientaddr_len;
@@ -53,19 +44,19 @@ private:
 
 public:
 
-	Server(int port, string pw);
+	Server(int port, std::string pw);
 	~Server();
 
 	int setup();
 	int run();
 	void cmd(int i);
-	void pass(int i, vector<string> arg);
-	void nick(int i, vector<string> arg);
-	void user(int i, vector<string> arg);
-	void join(int i, vector<string> arg);
-	void part(int i, vector<string> arg);
-	void kick(int i, vector<string> arg);
-	void privmsg(int i, vector<string> arg);
+	void pass(int i, std::vector<std::string> arg);
+	void nick(int i, std::vector<std::string> arg);
+	void user(int i, std::vector<std::string> arg);
+	void join(int i, std::vector<std::string> arg);
+	void part(int i, std::vector<std::string> arg);
+	void kick(int i, std::vector<std::string> arg);
+	void privmsg(int i, std::vector<std::string> arg);
 	void quit(int i);
 
 	class ERR_WRONG_PW : public std::exception

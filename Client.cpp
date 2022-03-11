@@ -1,5 +1,10 @@
 #include "Client.hpp"
 
+using std::string;
+using std::vector;
+using std::map;
+using std::set;
+
 Client::Client() : _is_authenticated(false), _is_registered(false), _nickname(""), _username(""), _msg(""), _idx(-1), _fd(-1) {}
 
 Client::Client(int idx, int fd) : _is_authenticated(false), _is_registered(false), _nickname(""), _username(""), _msg(""), _idx(idx), _fd(fd) {}

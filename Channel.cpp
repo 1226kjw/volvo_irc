@@ -1,5 +1,9 @@
 #include "Channel.hpp"
 
+using std::string;
+using std::set;
+using std::map;
+
 Channel::Channel() {}
 
 Channel::Channel(const Channel& c)

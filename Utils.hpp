@@ -3,16 +3,8 @@
 
 # include <string>
 # include <vector>
-# include <queue>
-# include <cstring>
 
-# include <unistd.h>
-
-using std::string;
-using std::vector;
-
-vector<string> split(string str, char d=' ');
-bool isin(char c, string pool);
-
+std::vector<std::string> split(std::string str, char d=' ');
+bool isin(char c, std::string pool);
 
 #endif

@@ -1,5 +1,9 @@
 #include "Server.hpp"
 
+using std::cout;
+using std::cin;
+using std::endl;
+
 int irc_atoi(char *str)
 {
 	long long int ret = 0;
