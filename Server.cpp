@@ -123,7 +123,7 @@ int Server::run()
 			else if (recv_size == 0)
 			{
 				close(client[i].fd());
-				cout << "byebye " << client[i].nickname() << endl;
+				cout << "good bye " << client[i].nickname() << endl;
 				cout << "index " << i << " is available" << endl;
 				client_map.erase(client[i].nickname());
 				while (!client[i].joined_channel().empty())
@@ -202,6 +202,8 @@ void Server::nick(int i, vector<string> arg)
 {
 	if (arg.size() != 1)
 		throw std::invalid_argument("invalid num of args\n");
+	if (!nickcheck(arg[0]))
+		throw std::invalid_argument("invalid nickname\n");
 	if (client_map.find(arg[0]) != client_map.end())
 		throw std::invalid_argument("already taken\n");
 	client_map[arg[0]] = i;
@@ -287,7 +289,7 @@ void Server::quit(int i)
 	}
 	while (!client[i].joined_channel().empty())
 		channel[*client[i].joined_channel().begin()].out(client[i]);
-	cout << "byebye " << client[i].nickname() << endl;
+	cout << "good bye " << client[i].nickname() << endl;
 	close(client[i].fd());
 	client_map.erase(client[i].nickname());
 	client_fd[i].events = 0;

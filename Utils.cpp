@@ -28,3 +28,14 @@ bool isin(char c, std::string pool)
 {
 	return (pool.find(c) != std::string::npos);
 }
+
+bool nickcheck(std::string str)
+{
+	char i = str[0];
+	if (((!std::isalpha(i) && !isin(i, ";[]\\`_^{|}")) || str.size() > 8))
+		return false;
+	for (std::string::iterator itr = ++str.begin(); itr != str.end(); ++itr)
+		if (!std::isalnum(*itr) && !isin(*itr, ";[]\\`_^{|}-"))
+			return false;
+	return true;
+}
