@@ -8,6 +8,9 @@
 
 # include <sys/socket.h>
 
+# define MODE_i 1
+# define MODE_o 2
+
 class Client
 {
 private:
@@ -19,6 +22,7 @@ private:
 	std::string _msg;
 	int _idx;
 	int _fd;
+	int _mode;
 
 public:
 	Client();
@@ -42,6 +46,9 @@ public:
 	std::string username(void);
 	int  idx(void);
 	int  fd(void);
+	int mode(void);
+	void mode_add(int m);
+	void mode_remove(int m);
 };
 
 #endif

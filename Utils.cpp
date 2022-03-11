@@ -32,7 +32,7 @@ bool isin(char c, std::string pool)
 bool nickcheck(std::string str)
 {
 	char i = str[0];
-	if (((!std::isalpha(i) && !isin(i, ";[]\\`_^{|}")) || str.size() > 8))
+	if (((!std::isalpha(i) && !isin(i, ";[]\\`_^{|}")) || str.size() > 9))
 		return false;
 	for (std::string::iterator itr = ++str.begin(); itr != str.end(); ++itr)
 		if (!std::isalnum(*itr) && !isin(*itr, ";[]\\`_^{|}-"))

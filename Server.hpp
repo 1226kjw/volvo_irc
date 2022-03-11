@@ -41,6 +41,8 @@ private:
 
 	int max_index;
 	int idx;
+	const string oper_name = "kim";
+	const string oper_pw = "lee";
 
 public:
 
@@ -53,6 +55,8 @@ public:
 	void pass(int i, std::vector<std::string> arg);
 	void nick(int i, std::vector<std::string> arg);
 	void user(int i, std::vector<std::string> arg);
+	void oper(int i, std::vector<std::string> arg);
+	void mode(int i, std::vector<std::string> arg);
 	void join(int i, std::vector<std::string> arg);
 	void part(int i, std::vector<std::string> arg);
 	void kick(int i, std::vector<std::string> arg);

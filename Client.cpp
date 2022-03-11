@@ -5,9 +5,9 @@ using std::vector;
 using std::map;
 using std::set;
 
-Client::Client() : _is_authenticated(false), _is_registered(false), _nickname(""), _username(""), _msg(""), _idx(-1), _fd(-1) {}
+Client::Client() : _is_authenticated(false), _is_registered(false), _nickname(""), _username(""), _msg(""), _idx(-1), _fd(-1), _mode(0) {}
 
-Client::Client(int idx, int fd) : _is_authenticated(false), _is_registered(false), _nickname(""), _username(""), _msg(""), _idx(idx), _fd(fd) {}
+Client::Client(int idx, int fd) : _is_authenticated(false), _is_registered(false), _nickname(""), _username(""), _msg(""), _idx(idx), _fd(fd), _mode(0) {}
 
 Client::Client(const Client& a)
 {
@@ -26,6 +26,7 @@ Client& Client::operator=(const Client& a)
 	_msg = a._msg;
 	_idx = a._idx;
 	_fd = a._fd;
+	_mode = a._mode;
 	return *this;
 }
 
@@ -121,4 +122,27 @@ int  Client::idx(void)
 int  Client::fd(void)
 {
 	return _fd;
+}
+
+int Client::mode(void)
+{
+	return _mode;
+}
+
+void Client::mode_add(int m)
+{
+	_mode |= m;
+	if (m == MODE_i)
+		sendMsg("you are invisible\n");
+	else if (m == MODE_o)
+		sendMsg("you are operator\n");
+}
+
+void Client::mode_remove(int m)
+{
+	_mode &= ~m;
+	if (m == MODE_i)
+		sendMsg("you are visible\n");
+	else if (m == MODE_o)
+		sendMsg("you are not operator\n");
 }

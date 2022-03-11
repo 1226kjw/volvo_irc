@@ -6,6 +6,7 @@ using std::endl;
 using std::string;
 using std::map;
 using std::set;
+using std::make_pair;
 using std::vector;
 using std::priority_queue;
 
@@ -169,6 +170,10 @@ void Server::cmd(int i)
 			nick(i, arg);
 		else if (command == "USER")
 			user(i, arg);
+		else if (command == "OPER")
+			oper(i, arg);
+		else if (command == "MODE")
+			mode(i, arg);
 		else if (command == "JOIN")
 			join(i, arg);
 		else if (command == "KICK")
@@ -217,6 +222,58 @@ void Server::user(int i, vector<string> arg)
 	client[i].user(arg);	
 }
 
+void Server::oper(int i, vector<string> arg)
+{
+	if (arg.size() != 2)
+		throw std::invalid_argument("invalid num of args\n");
+	if (oper_name != arg[0])
+		throw std::invalid_argument("no oper host\n");
+	if (oper_pw != arg[1])
+		throw std::invalid_argument("passwd mismatch\n");
+	client[i].mode_add(MODE_o);
+	client[i].sendMsg("youre oper\n");
+}
+
+void Server::mode(int i, vector<string> arg)
+{
+	if (arg.size() != 2)
+		throw std::invalid_argument("invalid num of args\n");
+	if (client_map.find(arg[0]) == client_map.end())
+		throw std::invalid_argument("no such user\n");
+	if (arg[1].size() == 2 || !isin(arg[1][0], "+-") || !isin(arg[1][1], "io"))
+		throw std::invalid_argument("unknown flag\n");
+	if (arg[1][0] == '-')
+	{
+		if (arg[1][1] == 'i')
+		{
+			if (client[i].nickname() != arg[0] && !(client[i].mode() & MODE_o))
+				throw std::invalid_argument("user dont match\n");
+			client[client_map[arg[0]]].mode_remove(MODE_i);
+		}
+		else if (arg[1][1] == 'o')
+		{
+			if (client[i].nickname() != arg[0] && !(client[i].mode() & MODE_o))
+				throw std::invalid_argument("user dont match\n");
+			client[client_map[arg[0]]].mode_remove(MODE_o);
+		}
+	}
+	else if (arg[1][0] == '+')
+	{
+		if (arg[1][1] == 'i')
+		{
+			if (client[i].nickname() != arg[0] && !(client[i].mode() & MODE_o))
+				throw std::invalid_argument("user dont match\n");
+			client[client_map[arg[0]]].mode_add(MODE_i);
+		}
+		else if (arg[1][1] == 'o')
+		{
+			if (client[i].nickname() == arg[0] || !(client[i].mode() & MODE_o))
+				throw std::invalid_argument("user dont match\n");
+			client[client_map[arg[0]]].mode_add(MODE_o);
+		}
+	}
+}
+
 void Server::join(int i, vector<string> arg)
 {
 	if (arg.size() == 1 && arg[0] == "0")
@@ -253,7 +310,7 @@ void Server::kick(int i, vector<string> arg)
 		throw std::invalid_argument("invalid channel\n");
 	if (channel[arg[0]].isin(client_map[arg[1]]))
 		throw std::invalid_argument("invalid user\n");
-	if (channel[arg[0]].manager() != client[i].username())
+	if (!(client[i].mode() & MODE_o))
 		throw std::invalid_argument("not authorized\n");
 	channel[arg[0]].sendMsg(client, i, client[i].prefix() + client[i].message());
 	channel[arg[0]].out(client[client_map[arg[1]]]);
