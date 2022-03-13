@@ -4,16 +4,6 @@ using std::cout;
 using std::cin;
 using std::endl;
 
-int irc_atoi(char *str)
-{
-	long long int ret = 0;
-	for (int i = 0; str[i] && ret >= 0; ++i)
-		ret = ret * 10 + str[i] - '0';
-	if (ret < 0)
-		throw std::out_of_range("");
-	return ret;
-}
-
 int main(int ac, char **av)
 {
 	if (ac < 3 || ac > 4)

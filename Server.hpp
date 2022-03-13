@@ -41,8 +41,8 @@ private:
 
 	int max_index;
 	int idx;
-	const string oper_name = "kim";
-	const string oper_pw = "lee";
+	const std::string oper_name;
+	const std::string oper_pw;
 
 public:
 
@@ -62,20 +62,9 @@ public:
 	void kick(int i, std::vector<std::string> arg);
 	void privmsg(int i, std::vector<std::string> arg);
 	void quit(int i);
-
-	class ERR_WRONG_PW : public std::exception
-	{
-	public:
-		virtual const char* what() const throw();
-	};
-
-	class ERR_NICKNAMEINUSE : public std::exception
-	{
-	public:
-		virtual const char* what() const throw();
-	};
 	
-	class ERR_NEEDMOREPARAMS : public std::exception
+	// custom
+	class ERR_WRONG_PW : public std::exception
 	{
 	public:
 		virtual const char* what() const throw();
@@ -94,6 +83,96 @@ public:
 	};
 
 	class ERR_NOT_REGISTERED : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+	class ERR_NOSUCHUSER : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+	// several
+	class ERR_NEEDMOREPARAMS : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+	class ERR_ERRONEUSNICKNAME : public std::exception
+	{
+	public:
+		virtual const char *what() const throw();
+	};
+
+	class ERR_ALREADYREGISTRED : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+	class ERR_NOSUCHCHANNEL : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+	class ERR_USERNOTINCHANNEL : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+	class ERR_CHANOPRIVSNEEDED : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+	class ERR_NOSUCHNICK : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+	// NICK
+	class ERR_NICKNAMEINUSE : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+	// OPER
+	class ERR_NOOPERHOST : public std::exception
+	{
+	public:
+		virtual const char *what() const throw();
+	};
+	
+	class ERR_PASSWDMISMATCH : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+
+	// MODE
+	class ERR_USERSDONTMATCH : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+	class ERR_UMODEUNKNOWNFLAG : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+	// PRIVMSG
+	class ERR_CANNOTSENDTOCHAN : public std::exception
 	{
 	public:
 		virtual const char* what() const throw();

@@ -10,37 +10,8 @@ using std::make_pair;
 using std::vector;
 using std::priority_queue;
 
-const char* Server::ERR_WRONG_PW::what() const throw()
-{
-	return "Wrong password\n";
-}
+Server::Server(int port, string pw): port(port), passwd(pw), clientaddr_len(sizeof(client_addr)), oper_name("kim"), oper_pw("lee") {}
 
-const char* Server::ERR_NICKNAMEINUSE::what() const throw()
-{
-	return "Nickname already taken\n";
-}
-
-const char* Server::ERR_NEEDMOREPARAMS::what() const throw()
-{
-	return "Need more parameters\n";
-}
-
-const char* Server::ERR_UNAUTHENTICATED::what() const throw()
-{
-	return "Unauthenticated\n";
-}
-
-const char* Server::ERR_ALREADY_AUTHENTICATED::what() const throw()
-{
-	return "Already authenticated\n";
-}
-
-const char* Server::ERR_NOT_REGISTERED::what() const throw()
-{
-	return "Not registered\n";
-}
-
-Server::Server(int port, string pw): port(port), passwd(pw), clientaddr_len(sizeof(client_addr)) {}
 Server::~Server()
 {
 	for (int i = 0; i < CLIENT_MAX; ++i)
@@ -197,63 +168,81 @@ void Server::cmd(int i)
 void Server::pass(int i, vector<string> arg)
 {
 	if (client[i].is_authenticated())
-		throw std::invalid_argument("already authenticated\n");
+		throw ERR_ALREADY_AUTHENTICATED();
 	if (arg.size() != 1)
-		throw std::invalid_argument("invalid num of args\n");
+		throw ERR_NEEDMOREPARAMS();
 	client[i].authenticate(passwd, arg);
 }
 
 void Server::nick(int i, vector<string> arg)
 {
 	if (arg.size() != 1)
-		throw std::invalid_argument("invalid num of args\n");
-	if (!nickcheck(arg[0]))
-		throw std::invalid_argument("invalid nickname\n");
+		throw ERR_NEEDMOREPARAMS();
+	if (!nickcheck(arg[0])) 
+		throw ERR_ERRONEUSNICKNAME();
 	if (client_map.find(arg[0]) != client_map.end())
-		throw std::invalid_argument("already taken\n");
+		throw ERR_NICKNAMEINUSE();
 	client_map[arg[0]] = i;
 	client[i].nick(client_map, arg[0]);
 }
 
 void Server::user(int i, vector<string> arg)
 {
+	if (client[i].is_registered())
+		throw ERR_ALREADYREGISTRED();
 	if (arg.size() != 4)
-		throw std::invalid_argument("invalid num of args\n");
+		throw ERR_NEEDMOREPARAMS();
+	int mode;
+	try
+	{
+		mode = irc_atoi(arg[1]);
+	}
+	catch(const std::exception& e)
+	{
+		mode = 0;
+	}
+	cout << mode << endl;
+	if (mode & MODE_o)
+	{
+		client[i].sendMsg("You are not operator\n");
+		mode -= MODE_o;
+	}
+	client[i].mode_remove(0x7fffffff);
+	client[i].mode_add(mode);
 	client[i].user(arg);	
 }
 
 void Server::oper(int i, vector<string> arg)
 {
 	if (arg.size() != 2)
-		throw std::invalid_argument("invalid num of args\n");
+		throw ERR_NEEDMOREPARAMS();
 	if (oper_name != arg[0])
-		throw std::invalid_argument("no oper host\n");
+		throw ERR_NOOPERHOST();
 	if (oper_pw != arg[1])
-		throw std::invalid_argument("passwd mismatch\n");
+		throw ERR_PASSWDMISMATCH();
 	client[i].mode_add(MODE_o);
-	client[i].sendMsg("youre oper\n");
 }
 
 void Server::mode(int i, vector<string> arg)
 {
 	if (arg.size() != 2)
-		throw std::invalid_argument("invalid num of args\n");
+		throw ERR_NEEDMOREPARAMS();
 	if (client_map.find(arg[0]) == client_map.end())
-		throw std::invalid_argument("no such user\n");
-	if (arg[1].size() == 2 || !isin(arg[1][0], "+-") || !isin(arg[1][1], "io"))
-		throw std::invalid_argument("unknown flag\n");
+		throw ERR_NOSUCHUSER();
+	if (arg[1].size() != 2 || !isin(arg[1][0], "+-") || !isin(arg[1][1], "io"))
+		throw ERR_UMODEUNKNOWNFLAG();
 	if (arg[1][0] == '-')
 	{
 		if (arg[1][1] == 'i')
 		{
 			if (client[i].nickname() != arg[0] && !(client[i].mode() & MODE_o))
-				throw std::invalid_argument("user dont match\n");
+				throw ERR_USERSDONTMATCH();
 			client[client_map[arg[0]]].mode_remove(MODE_i);
 		}
 		else if (arg[1][1] == 'o')
 		{
 			if (client[i].nickname() != arg[0] && !(client[i].mode() & MODE_o))
-				throw std::invalid_argument("user dont match\n");
+				throw ERR_USERSDONTMATCH();
 			client[client_map[arg[0]]].mode_remove(MODE_o);
 		}
 	}
@@ -262,13 +251,13 @@ void Server::mode(int i, vector<string> arg)
 		if (arg[1][1] == 'i')
 		{
 			if (client[i].nickname() != arg[0] && !(client[i].mode() & MODE_o))
-				throw std::invalid_argument("user dont match\n");
+				throw ERR_USERSDONTMATCH();
 			client[client_map[arg[0]]].mode_add(MODE_i);
 		}
 		else if (arg[1][1] == 'o')
 		{
 			if (client[i].nickname() == arg[0] || !(client[i].mode() & MODE_o))
-				throw std::invalid_argument("user dont match\n");
+				throw ERR_USERSDONTMATCH();
 			client[client_map[arg[0]]].mode_add(MODE_o);
 		}
 	}
@@ -283,7 +272,7 @@ void Server::join(int i, vector<string> arg)
 		for (vector<string>::iterator itr = arg.begin(); itr != arg.end(); ++itr)
 		{
 			if (!isin(itr->at(0), CHANNEL_PREFIX))
-				throw std::invalid_argument("invalid arg\n");
+				throw ERR_NOSUCHCHANNEL();
 			if (channel.find(*itr) == channel.end())
 				channel[*itr] = Channel(*itr, client[i].nickname());
 			channel[*itr].join(client[i]);
@@ -293,9 +282,9 @@ void Server::join(int i, vector<string> arg)
 void Server::part(int i, vector<string> arg)
 {
 	if (arg.size() != 1)
-		throw std::invalid_argument("invalid num of args\n");
+		throw ERR_NEEDMOREPARAMS();
 	if (channel.find(arg[0]) == channel.end())
-		throw std::invalid_argument("no such channel\n");
+		throw ERR_NOSUCHCHANNEL();
 	channel[arg[0]].sendMsg(client, i, client[i].prefix() + client[i].message());
 	channel[arg[0]].out(client[i]);
 }
@@ -303,15 +292,15 @@ void Server::part(int i, vector<string> arg)
 void Server::kick(int i, vector<string> arg)
 {
 	if (arg.size() != 2)
-		throw std::invalid_argument("invalid num of args\n");
+		throw ERR_NEEDMOREPARAMS();
 	if (!isin(arg[0][0], CHANNEL_PREFIX))
-		throw std::invalid_argument("invalid arg\n");
+		throw ERR_NOSUCHCHANNEL();
 	if (channel.find(arg[0]) == channel.end())
-		throw std::invalid_argument("invalid channel\n");
-	if (channel[arg[0]].isin(client_map[arg[1]]))
-		throw std::invalid_argument("invalid user\n");
+		throw ERR_NOSUCHCHANNEL();
+	if (!(channel[arg[0]].isin(client_map[arg[1]])))
+		throw ERR_USERNOTINCHANNEL();
 	if (!(client[i].mode() & MODE_o))
-		throw std::invalid_argument("not authorized\n");
+		throw ERR_CHANOPRIVSNEEDED();
 	channel[arg[0]].sendMsg(client, i, client[i].prefix() + client[i].message());
 	channel[arg[0]].out(client[client_map[arg[1]]]);
 }
@@ -319,19 +308,19 @@ void Server::kick(int i, vector<string> arg)
 void Server::privmsg(int i, vector<string> arg)
 {
 	if (arg.size() < 2)
-		throw std::invalid_argument("invalid num of args\n");
+		throw ERR_NEEDMOREPARAMS();
 	for (vector<string>::iterator itr = arg.begin(); itr != --arg.end(); ++itr)
 	{
 		if (isin(itr->at(0), CHANNEL_PREFIX))
 		{
 			if (channel.find(*itr) == channel.end())
-				throw std::invalid_argument("no such channel\n");
+				throw ERR_CANNOTSENDTOCHAN(); //"no such channel;
 			channel[*itr].sendMsg(client, i, client[i].prefix() + client[i].message());
 		}
 		else
 		{
 			if (client_map.find(*itr) == client_map.end())
-				throw std::invalid_argument("no such user\n");
+				throw ERR_NOSUCHNICK(); // no such user;
 			client[client_map[*itr]].sendMsg(client[i].prefix() + client[i].message());
 		}
 	}
@@ -352,4 +341,93 @@ void Server::quit(int i)
 	client_fd[i].events = 0;
 	client_fd[i].fd = -1;
 	available_index.push(-i);
+}
+
+const char* Server::ERR_WRONG_PW::what() const throw()
+{
+	return "Wrong password\n";
+}
+
+const char* Server::ERR_UNAUTHENTICATED::what() const throw()
+{
+	return "Unauthenticated\n";
+}
+
+const char* Server::ERR_ALREADY_AUTHENTICATED::what() const throw()
+{
+	return "Already authenticated\n";
+}
+
+const char* Server::ERR_NOT_REGISTERED::what() const throw()
+{
+	return "Not registered\n";
+}
+
+const char* Server::ERR_NEEDMOREPARAMS::what() const throw()
+{
+	return "Need more parameters\n";
+}
+
+const char* Server::ERR_ERRONEUSNICKNAME::what() const throw()
+{
+	return "Invalid Nickname\n";
+}
+const char* Server::ERR_ALREADYREGISTRED::what() const throw()
+{
+	return "Already Registered\n";
+}
+
+const char* Server::ERR_NOSUCHCHANNEL::what() const throw()
+{
+	return "No such channel\n";
+}
+
+const char* Server::ERR_USERNOTINCHANNEL::what() const throw()
+{
+	return "There is no user in the channel\n";
+}
+
+const char* Server::ERR_CHANOPRIVSNEEDED::what() const throw()
+{
+	return "You are not operator\n";
+}
+
+const char* Server::ERR_NOSUCHNICK::what() const throw()
+{
+	return "No such nickname\n";
+}
+
+const char* Server::ERR_NICKNAMEINUSE::what() const throw()
+{
+	return "Nickname already used\n";
+}
+
+const char* Server::ERR_NOOPERHOST::what() const throw()
+{
+	return "Wrong host name\n";
+}
+
+const char* Server::ERR_PASSWDMISMATCH::what() const throw()
+{
+	return "Wrong host password\n";
+}
+
+const char* Server::ERR_USERSDONTMATCH::what() const throw()
+{
+	return "User don't match\n";
+}
+
+const char* Server::ERR_UMODEUNKNOWNFLAG::what() const throw()
+{
+	return "Wrong mode\n";
+}
+
+const char *Server::ERR_CANNOTSENDTOCHAN::what() const throw()
+{
+	return "Cannot send to channel\n";
+}
+
+const char *Server::ERR_NOSUCHUSER::what() const throw()
+{
+	return "No such user\n";
 }

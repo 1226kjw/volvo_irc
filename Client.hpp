@@ -8,8 +8,8 @@
 
 # include <sys/socket.h>
 
-# define MODE_i 1
-# define MODE_o 2
+# define MODE_i 8
+# define MODE_o 1
 
 class Client
 {

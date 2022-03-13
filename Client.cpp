@@ -43,7 +43,7 @@ void Client::authenticate(string passwd, vector<string> arg)
 		_is_authenticated = true;
 	}
 	else
-		sendMsg("wrong passwd\n");
+		sendMsg("wrong password\n");
 }
 
 void Client::nick(map<string, int>& client_map, string arg)
@@ -131,18 +131,18 @@ int Client::mode(void)
 
 void Client::mode_add(int m)
 {
-	_mode |= m;
-	if (m == MODE_i)
+	if (!(_mode&MODE_i) && (m & MODE_i))
 		sendMsg("you are invisible\n");
-	else if (m == MODE_o)
+	if (!(_mode&MODE_o) && (m & MODE_o))
 		sendMsg("you are operator\n");
+	_mode |= m;
 }
 
 void Client::mode_remove(int m)
 {
-	_mode &= ~m;
-	if (m == MODE_i)
+	if ((_mode & MODE_i) && (m & MODE_i))
 		sendMsg("you are visible\n");
-	else if (m == MODE_o)
+	if ((_mode & MODE_o) && (m & MODE_o))
 		sendMsg("you are not operator\n");
+	_mode &= ~m;
 }
