@@ -59,6 +59,7 @@ public:
 	void mode(int i, std::vector<std::string> arg);
 	void join(int i, std::vector<std::string> arg);
 	void part(int i, std::vector<std::string> arg);
+	void names(int i, std::vector<std::string> arg);
 	void kick(int i, std::vector<std::string> arg);
 	void privmsg(int i, std::vector<std::string> arg);
 	void quit(int i);
@@ -89,6 +90,12 @@ public:
 	};
 
 	class ERR_NOSUCHUSER : public std::exception
+	{
+	public:
+		virtual const char* what() const throw();
+	};
+
+	class ERR_TOOMANYPARAMS : public std::exception
 	{
 	public:
 		virtual const char* what() const throw();

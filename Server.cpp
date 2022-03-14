@@ -74,6 +74,13 @@ int Server::run()
 			client_fd[idx].fd = client_socket;
 			client_fd[idx].events = POLLIN;
 			client[idx] = Client(idx, client_socket);
+			if (available_index.size() == 0)
+			{
+				client[idx].sendMsg("Already full\n");
+				close(client[idx].fd());
+				available_index.push(-idx);
+				continue;
+			}
 			if (idx == max_index)
 				++max_index;
 			cout << "ip  : " << inet_ntoa(client_addr.sin_addr) << endl;
@@ -99,7 +106,7 @@ int Server::run()
 				cout << "index " << i << " is available" << endl;
 				client_map.erase(client[i].nickname());
 				while (!client[i].joined_channel().empty())
-					channel[*client[i].joined_channel().begin()].out(client[i]);
+					channel[*client[i].joined_channel().begin()].out(client[i], channel);
 				client_fd[i].events = 0;
 				client_fd[i].fd = -1;
 				available_index.push(-i);
@@ -151,6 +158,8 @@ void Server::cmd(int i)
 			kick(i, arg);
 		else if (command == "PART")
 			part(i, arg);
+		else if (command == "NAMES")
+			names(i, arg);
 		else if (command == "PRIVMSG" || command == "NOTICE")
 			privmsg(i, arg);
 		else if (command == "QUIT")
@@ -267,14 +276,14 @@ void Server::join(int i, vector<string> arg)
 {
 	if (arg.size() == 1 && arg[0] == "0")
 		while (!client[i].joined_channel().empty())
-			channel[*client[i].joined_channel().begin()].out(client[i]);
+			channel[*client[i].joined_channel().begin()].out(client[i], channel);
 	else
 		for (vector<string>::iterator itr = arg.begin(); itr != arg.end(); ++itr)
 		{
 			if (!isin(itr->at(0), CHANNEL_PREFIX))
 				throw ERR_NOSUCHCHANNEL();
 			if (channel.find(*itr) == channel.end())
-				channel[*itr] = Channel(*itr, client[i].nickname());
+				channel[*itr] = Channel(*itr);
 			channel[*itr].join(client[i]);
 		}
 }
@@ -286,7 +295,53 @@ void Server::part(int i, vector<string> arg)
 	if (channel.find(arg[0]) == channel.end())
 		throw ERR_NOSUCHCHANNEL();
 	channel[arg[0]].sendMsg(client, i, client[i].prefix() + client[i].message());
-	channel[arg[0]].out(client[i]);
+	channel[arg[0]].out(client[i], channel);
+}
+
+void Server::names(int i, vector<string> arg)
+{
+	if (arg.size() > 1)
+		throw ERR_TOOMANYPARAMS();
+	string buf;
+	map<string, bool> visited;
+	for (map<string, int>::iterator itr = client_map.begin(); itr != client_map.end(); ++itr)
+		visited[itr->first] = false;
+	if (arg.size() == 0)
+	{
+		for (map<string, Channel>::iterator itr = channel.begin(); itr != channel.end() ; ++itr)
+		{
+			buf += itr->first + ": { ";
+			for (set<int>::iterator sitr = itr->second.member().begin(); sitr != itr->second.member().end(); ++sitr)
+			{
+				if (client[*sitr].mode() & MODE_i)
+					continue;
+				buf += client[*sitr].nickname() + ' ';
+				visited[client[*sitr].nickname()] = true;
+			}
+			buf += "}\n";
+		}
+		buf += "*: { ";
+		for (map<string, bool>::iterator itr = visited.begin(); itr != visited.end(); ++itr)
+			if (!itr->second && !(client[client_map[itr->first]].mode() & MODE_i))
+				buf += itr->first + ' ';
+		buf += "}\n";
+
+	}
+	else
+	{
+		if (channel.find(arg[0]) == channel.end())
+			throw ERR_NOSUCHCHANNEL();
+		buf += arg[0] + ": { ";
+		for (set<int>::iterator sitr = channel[arg[0]].member().begin(); sitr != channel[arg[0]].member().end(); ++sitr)
+		{
+			if (client[*sitr].mode() & MODE_i)
+				continue;
+			buf += client[*sitr].nickname() + ' ';
+		}
+		buf += "}\n";
+	}
+
+	client[i].sendMsg(buf);
 }
 
 void Server::kick(int i, vector<string> arg)
@@ -302,7 +357,7 @@ void Server::kick(int i, vector<string> arg)
 	if (!(client[i].mode() & MODE_o))
 		throw ERR_CHANOPRIVSNEEDED();
 	channel[arg[0]].sendMsg(client, i, client[i].prefix() + client[i].message());
-	channel[arg[0]].out(client[client_map[arg[1]]]);
+	channel[arg[0]].out(client[client_map[arg[1]]], channel);
 }
 
 void Server::privmsg(int i, vector<string> arg)
@@ -334,7 +389,7 @@ void Server::quit(int i)
 		privmsg(i, tmp);
 	}
 	while (!client[i].joined_channel().empty())
-		channel[*client[i].joined_channel().begin()].out(client[i]);
+		channel[*client[i].joined_channel().begin()].out(client[i], channel);
 	cout << "good bye " << client[i].nickname() << endl;
 	close(client[i].fd());
 	client_map.erase(client[i].nickname());
@@ -372,6 +427,7 @@ const char* Server::ERR_ERRONEUSNICKNAME::what() const throw()
 {
 	return "Invalid Nickname\n";
 }
+
 const char* Server::ERR_ALREADYREGISTRED::what() const throw()
 {
 	return "Already Registered\n";
@@ -430,4 +486,9 @@ const char *Server::ERR_CANNOTSENDTOCHAN::what() const throw()
 const char *Server::ERR_NOSUCHUSER::what() const throw()
 {
 	return "No such user\n";
+}
+
+const char* Server::ERR_TOOMANYPARAMS::what() const throw()
+{
+	return "There are too many parameters\n";
 }
