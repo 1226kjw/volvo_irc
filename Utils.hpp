@@ -4,6 +4,7 @@
 # include <string>
 # include <vector>
 # include <iostream>
+# include <stdexcept>
 
 std::vector<std::string> split(std::string str, char d=' ');
 bool isin(char c, std::string pool);

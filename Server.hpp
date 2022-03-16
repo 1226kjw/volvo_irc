@@ -7,6 +7,7 @@
 # include <vector>
 # include <queue>
 # include <cstring>
+#include <cstdlib>
 
 # include <sys/types.h>
 # include <sys/socket.h>
