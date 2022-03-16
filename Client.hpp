@@ -43,7 +43,6 @@ public:
 	void message(std::string s);
 	std::set<std::string>& joined_channel(void);
 	std::string nickname(void);
-	std::string username(void);
 	int  idx(void);
 	int  fd(void);
 	int mode(void);

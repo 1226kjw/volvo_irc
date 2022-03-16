@@ -109,11 +109,6 @@ string Client::nickname(void)
 	return _nickname;
 }
 
-string Client::username(void)
-{
-	return _username;
-}
-
 int  Client::idx(void)
 {
 	return _idx;

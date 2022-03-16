@@ -398,24 +398,9 @@ void Server::quit(int i)
 	available_index.push(-i);
 }
 
-const char* Server::ERR_WRONG_PW::what() const throw()
-{
-	return "Wrong password\n";
-}
-
-const char* Server::ERR_UNAUTHENTICATED::what() const throw()
-{
-	return "Unauthenticated\n";
-}
-
 const char* Server::ERR_ALREADY_AUTHENTICATED::what() const throw()
 {
 	return "Already authenticated\n";
-}
-
-const char* Server::ERR_NOT_REGISTERED::what() const throw()
-{
-	return "Not registered\n";
 }
 
 const char* Server::ERR_NEEDMOREPARAMS::what() const throw()
