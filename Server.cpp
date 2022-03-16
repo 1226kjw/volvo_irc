@@ -21,7 +21,7 @@ Server::~Server()
 
 int Server::setup()
 {
-	if ((server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	if ((server_socket = socket(PF_INET, SOCK_STREAM, 0)) < 0)
 	{
 		cerr << "Cannot create a socket" << endl;
 		return 1;
