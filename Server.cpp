@@ -369,13 +369,13 @@ void Server::privmsg(int i, vector<string> arg)
 		if (isin(itr->at(0), CHANNEL_PREFIX))
 		{
 			if (channel.find(*itr) == channel.end())
-				throw ERR_CANNOTSENDTOCHAN(); //"no such channel;
+				throw ERR_CANNOTSENDTOCHAN();
 			channel[*itr].sendMsg(client, i, client[i].prefix() + client[i].message());
 		}
 		else
 		{
 			if (client_map.find(*itr) == client_map.end())
-				throw ERR_NOSUCHNICK(); // no such user;
+				throw ERR_NOSUCHNICK();
 			client[client_map[*itr]].sendMsg(client[i].prefix() + client[i].message());
 		}
 	}
