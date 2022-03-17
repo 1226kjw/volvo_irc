@@ -7,7 +7,7 @@
 # include <vector>
 # include <queue>
 # include <cstring>
-#include <cstdlib>
+# include <cstdlib>
 
 # include <sys/types.h>
 # include <sys/socket.h>
@@ -46,7 +46,6 @@ private:
 	const std::string oper_pw;
 
 public:
-
 	Server(int port, std::string pw);
 	~Server();
 
@@ -66,25 +65,7 @@ public:
 	void quit(int i);
 	
 	// custom
-	class ERR_WRONG_PW : public std::exception
-	{
-	public:
-		virtual const char* what() const throw();
-	};
-
-	class ERR_UNAUTHENTICATED : public std::exception
-	{
-	public:
-		virtual const char* what() const throw();
-	};
-	
 	class ERR_ALREADY_AUTHENTICATED : public std::exception
-	{
-	public:
-		virtual const char* what() const throw();
-	};
-
-	class ERR_NOT_REGISTERED : public std::exception
 	{
 	public:
 		virtual const char* what() const throw();
