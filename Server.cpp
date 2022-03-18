@@ -210,7 +210,6 @@ void Server::user(int i, vector<string> arg)
 	{
 		mode = 0;
 	}
-	cout << mode << endl;
 	if (mode & MODE_o)
 	{
 		client[i].sendMsg("You are not operator\n");

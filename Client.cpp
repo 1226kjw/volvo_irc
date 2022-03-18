@@ -76,7 +76,7 @@ void Client::sendMsg(string message, int flag)
 
 string Client::prefix(void)
 {
-	return string(":") + _username + ' ';
+    return string(":") + _nickname + "!" + _username + "@student.42seoul.kr ";
 }
 
 bool Client::is_registered(void)
