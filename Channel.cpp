@@ -41,7 +41,7 @@ void Channel::join(Client &c)
 	c.joined_channel().insert(_name);
 }
 
-void Channel::out(Client& c, map<string, Channel>& channel)
+void Channel::out(Client& c, std::map<string, Channel>& channel)
 {
 	if (!isin(c.idx()))
 		return ;

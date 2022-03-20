@@ -21,7 +21,8 @@
 # include "Utils.hpp"
 
 #define CLIENT_MAX 1000
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 600
+#define MAX_MESSAGE_LENGTH 512
 #define CHANNEL_PREFIX "#&+!"
 
 class Server
@@ -51,7 +52,7 @@ public:
 
 	int setup();
 	int run();
-	void cmd(int i);
+	void cmd(int i, std::string::size_type nl_index);
 	void pass(int i, std::vector<std::string> arg);
 	void nick(int i, std::vector<std::string> arg);
 	void user(int i, std::vector<std::string> arg);

@@ -50,8 +50,7 @@ int irc_atoi(std::string str)
 		else
 			throw std::invalid_argument("");
 
-		if ((ret < 0) || (ret > 2147483647)) {
-            throw std::out_of_range("");
-	}
+	if ((ret < 0) || (ret > 2147483647))
+		throw std::out_of_range("");
 	return static_cast<int>(ret);
 }

@@ -44,6 +44,11 @@ void Client::authenticate(string passwd, vector<string> arg)
 	}
 	else
 		sendMsg("wrong password\n");
+	if (_is_authenticated && _nickname != "" && _username != "")
+	{
+		_is_registered = true;
+		sendMsg("registered\n");
+	}
 }
 
 void Client::nick(map<string, int>& client_map, string arg)

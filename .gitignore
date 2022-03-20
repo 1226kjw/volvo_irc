@@ -1,5 +1,6 @@
 *.o
 *.d
 .gitignore
-ft_irc
+ircserv
 .vscode/
+test.cpp

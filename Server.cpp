@@ -99,7 +99,7 @@ int Server::run()
 				cerr << "recv error" << endl;
 				return 1;
 			}
-			else if (recv_size == 0)
+			else if (recv_size == 0 || recv_size > MAX_MESSAGE_LENGTH)
 			{
 				close(client[i].fd());
 				cout << "good bye " << client[i].nickname() << endl;
@@ -115,29 +115,35 @@ int Server::run()
 			{
 				buf[recv_size] = 0;
 				client[i].feed(buf);
-				if (*--client[i].message().end() == '\n')
-					cmd(i);
+				string::size_type nl_index;
+				while ((nl_index = client[i].message().find_first_of("\r\n")) != string::npos)
+					cmd(i, nl_index);
 			}
 		}
 	}
 }
 
-void Server::cmd(int i)
+void Server::cmd(int i, string::size_type nl_index)
 {
-	if (client[i].message() == "\n")
+	cout << nl_index << endl;;
+	string::size_type next_index = client[i].message().find_first_not_of("\r\n", nl_index);
+	string next_message = next_index == string::npos ? "" : client[i].message().substr(next_index);
+	client[i].message(client[i].message().substr(0, nl_index));
+	if (client[i].message().size() == 0)
 	{
-		client[i].message("");
+		client[i].message(next_message);
 		return ;
 	}
-	cout << "from " << i << ':' << client[i].message();
-	vector<string> tok = split(client[i].message().substr(0, client[i].message().size() - 1));
+	cout << "from " << i << ':' << client[i].message() << endl;
+	vector<string> tok = split(client[i].message());
 	
 	if (tok.size() == 0)
 		return ;
 	
 	string command = tok[0];
 	vector<string> arg(tok.begin() + 1, tok.end());
-
+	for (string::size_type ii = 0; ii < command.size(); ++ii)
+		command[ii] = std::toupper(command[ii]);
 	try
 	{
 		if (!client[i].is_registered() && command != "PASS" && command != "NICK" && command != "USER")
@@ -171,7 +177,7 @@ void Server::cmd(int i)
 	{
 		client[i].sendMsg(e.what());
 	}
-	client[i].message("");
+	client[i].message(next_message);
 }
 
 void Server::pass(int i, vector<string> arg)
@@ -233,8 +239,10 @@ void Server::oper(int i, vector<string> arg)
 
 void Server::mode(int i, vector<string> arg)
 {
-	if (arg.size() != 2)
+	if (arg.size() < 2 || arg.size() > 3)
 		throw ERR_NEEDMOREPARAMS();
+	if (arg.size() == 3)
+		arg.erase(arg.begin());
 	if (client_map.find(arg[0]) == client_map.end())
 		throw ERR_NOSUCHUSER();
 	if (arg[1].size() != 2 || !isin(arg[1][0], "+-") || !isin(arg[1][1], "io"))
@@ -284,6 +292,7 @@ void Server::join(int i, vector<string> arg)
 			if (channel.find(*itr) == channel.end())
 				channel[*itr] = Channel(*itr);
 			channel[*itr].join(client[i]);
+			channel[*itr].sendMsg(client, i, client[i].prefix() + client[i].message() + '\n');
 		}
 }
 
@@ -369,13 +378,13 @@ void Server::privmsg(int i, vector<string> arg)
 		{
 			if (channel.find(*itr) == channel.end())
 				throw ERR_CANNOTSENDTOCHAN();
-			channel[*itr].sendMsg(client, i, client[i].prefix() + client[i].message());
+			channel[*itr].sendMsg(client, i, client[i].prefix() + client[i].message() + '\n');
 		}
 		else
 		{
 			if (client_map.find(*itr) == client_map.end())
 				throw ERR_NOSUCHNICK();
-			client[client_map[*itr]].sendMsg(client[i].prefix() + client[i].message());
+			client[client_map[*itr]].sendMsg(client[i].prefix() + client[i].message() + '\n');
 		}
 	}
 }
