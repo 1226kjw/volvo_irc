@@ -101,6 +101,8 @@ int Server::run()
 			}
 			else if (recv_size == 0 || recv_size > MAX_MESSAGE_LENGTH)
 			{
+				if (recv_size > MAX_MESSAGE_LENGTH)
+					client[i].sendMsg("Message length NOT supported!");
 				close(client[i].fd());
 				cout << "good bye " << client[i].nickname() << endl;
 				cout << "index " << i << " is available" << endl;
@@ -125,7 +127,6 @@ int Server::run()
 
 void Server::cmd(int i, string::size_type nl_index)
 {
-	cout << nl_index << endl;;
 	string::size_type next_index = client[i].message().find_first_not_of("\r\n", nl_index);
 	string next_message = next_index == string::npos ? "" : client[i].message().substr(next_index);
 	client[i].message(client[i].message().substr(0, nl_index));
@@ -310,7 +311,7 @@ void Server::names(int i, vector<string> arg)
 {
 	if (arg.size() > 1)
 		throw ERR_TOOMANYPARAMS();
-	string buf;
+	string buf = client[i].prefix() + "PRIVMSG ";
 	map<string, bool> visited;
 	for (map<string, int>::iterator itr = client_map.begin(); itr != client_map.end(); ++itr)
 		visited[itr->first] = false;
@@ -339,6 +340,7 @@ void Server::names(int i, vector<string> arg)
 	{
 		if (channel.find(arg[0]) == channel.end())
 			throw ERR_NOSUCHCHANNEL();
+		buf += arg[0] + " :";
 		buf += arg[0] + ": { ";
 		for (set<int>::iterator sitr = channel[arg[0]].member().begin(); sitr != channel[arg[0]].member().end(); ++sitr)
 		{

@@ -7,7 +7,10 @@ using std::endl;
 int main(int ac, char **av)
 {
 	if (ac < 3 || ac > 4)
+	{
+		std::cerr << "usage: ./ircserv [host:port_network:password_network] <port> <password>" << endl;
 		return 1;
+	}
 	for (int i = 0; av[ac - 2][i]; ++i)
 		if (!isdigit(av[ac - 2][i]))
 		{

@@ -76,6 +76,7 @@ void Client::user(vector<string> args)
 
 void Client::sendMsg(string message, int flag)
 {
+	std::cout << "to " << _idx << ':' << message;
 	send(_fd, message.c_str(), message.size(), flag);
 }
 
