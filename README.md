@@ -27,7 +27,7 @@ Internet is ruled by solid standards protocols that allow connected computers to
 | QUIT          | Terminated with a quit message.        |
 
 - Based on [RFC 2812](https://datatracker.ietf.org/doc/html/rfc2812).
-- Tested using [Hexchat](https://github.com/hexchat/hexchat).
+- Test using [Hexchat](https://github.com/hexchat/hexchat).
 
 
 ## 🚘 Team(Volvo XC90)
