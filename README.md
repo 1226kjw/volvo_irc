@@ -8,6 +8,25 @@ You will use an actual IRC client to connect to your server and test it.
 
 Internet is ruled by solid standards protocols that allow connected computers to interact with each other.
 
+## 🏃 Installation
+
+```shell
+
+git clone https://github.com/1226kjw/volvo_irc.git
+
+make
+```
+
+- Run IRC server
+```shell
+./ircserv [port number] [password]
+```
+
+- Open new terminal
+
+```shell
+nc [IP address] [port number]
+```
 
 ## ⚙️ Functions
 
@@ -32,6 +51,7 @@ Internet is ruled by solid standards protocols that allow connected computers to
 
 ## 🚘 Team(Volvo XC90)
 
-- [Jihae Kim](https://github.com/deftones88)
-- [Yeshin Lee](https://github.com/yeslee-v)
-- [Jinuk Kim](https://github.com/1226kjw)
+|[Yeshin Lee(yeslee)](https://github.com/yeslee-v)|[Jihae Kim(ji-kim)](https://github.com/deftones88)|[Jinuk Kim(jinukim)](https://github.com/1226kjw)|
+|:-:|:-:|:-:|
+|Leader|Member|Member|
+
